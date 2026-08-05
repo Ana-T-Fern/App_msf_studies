@@ -49,50 +49,60 @@ def fetch_new_question_openrouter(api_key):
 
         prompt = """
         Gera 1 pergunta inédita e de alta dificuldade em Português para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
-        Responde EXCLUSIVAMENTE num objeto JSON válido com este formato exato:
+        Responde EXCLUSIVAMENTE com um objeto JSON válido no formato:
         {
           "question": "Texto da pergunta em cenário real",
           "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
           "answer": "Texto exato de uma das opções acima que está correta",
           "explanation": "Explicação detalhada baseada na documentação do Microsoft Fabric"
         }
+        Não inclua marcadores de código como ```json ou texto adicional fora do JSON.
         """
 
-        # Usar modelo 100% gratuito e disponível no OpenRouter
-        payload = {
-            "model": "meta-llama/llama-3.1-8b-instruct:free",
-            "messages": [
-                {
-                    "role": "system",
-                    "content": "És um especialista no exame Microsoft Fabric DP-700. Respondes apenas em formato JSON.",
-                },
-                {"role": "user", "content": prompt},
-            ],
-            "response_format": {"type": "json_object"},
-        }
+        # Lista de modelos gratuitos ativos e de alta disponibilidade no OpenRouter
+        free_models = [
+            "deepseek/deepseek-r1:free",
+            "qwen/qwen-2.5-72b-instruct:free",
+            "meta-llama/llama-3.1-8b-instruct:free",
+        ]
 
-        response = requests.post(url, headers=headers, json=payload, timeout=15)
-        res_data = response.json()
+        for model_name in free_models:
+            payload = {
+                "model": model_name,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "És um especialista no exame Microsoft Fabric DP-700. Respondes apenas em formato JSON estrito.",
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+            }
 
-        if "choices" in res_data:
-            content = res_data["choices"][0]["message"]["content"]
-            return json.loads(content)
-        else:
-            # Fallback para o Gemini 2.0 gratuito via OpenRouter se o Llama falhar
-            payload["model"] = "google/gemini-2.0-flash-exp:free"
-            fallback_res = requests.post(
-                url, headers=headers, json=payload, timeout=15
-            ).json()
+            response = requests.post(
+                url, headers=headers, json=payload, timeout=20
+            )
+            res_data = response.json()
 
-            if "choices" in fallback_res:
-                content = fallback_res["choices"][0]["message"]["content"]
-                return json.loads(content)
-            else:
-                st.error(f"Erro no OpenRouter: {fallback_res}")
-                return None
+            if "choices" in res_data and len(res_data["choices"]) > 0:
+                content = res_data["choices"][0]["message"]["content"]
+
+                # Limpar possíveis blocos markdown ```json ... ```
+                content_clean = re.sub(
+                    r"```json\s*|\s*```", "", content
+                ).strip()
+
+                # Tentar extrair o JSON do texto se houver caracteres extras
+                json_match = re.search(r"\{.*\}", content_clean, re.DOTALL)
+                if json_match:
+                    return json.loads(json_match.group(0))
+
+        st.error(
+            "Nenhum dos modelos gratuitos respondeu no momento. Tenta novamente em alguns segundos."
+        )
+        return None
 
     except Exception as e:
-        st.error(f"Erro ao gerar pergunta: {e}")
+        st.error(f"Erro ao processar pergunta: {e}")
         return None
 
 # Input da API Key do OpenRouter
