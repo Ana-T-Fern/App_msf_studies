@@ -58,8 +58,9 @@ def fetch_new_question_openrouter(api_key):
         }
         """
 
+        # Usar modelo 100% gratuito e disponível no OpenRouter
         payload = {
-            "model": "meta-llama/llama-3.3-70b-instruct:free",
+            "model": "meta-llama/llama-3.1-8b-instruct:free",
             "messages": [
                 {
                     "role": "system",
@@ -77,13 +78,22 @@ def fetch_new_question_openrouter(api_key):
             content = res_data["choices"][0]["message"]["content"]
             return json.loads(content)
         else:
-            st.error(f"Erro no OpenRouter: {res_data}")
-            return None
+            # Fallback para o Gemini 2.0 gratuito via OpenRouter se o Llama falhar
+            payload["model"] = "google/gemini-2.0-flash-exp:free"
+            fallback_res = requests.post(
+                url, headers=headers, json=payload, timeout=15
+            ).json()
+
+            if "choices" in fallback_res:
+                content = fallback_res["choices"][0]["message"]["content"]
+                return json.loads(content)
+            else:
+                st.error(f"Erro no OpenRouter: {fallback_res}")
+                return None
 
     except Exception as e:
         st.error(f"Erro ao gerar pergunta: {e}")
         return None
-
 
 # Input da API Key do OpenRouter
 api_key = st.text_input(
