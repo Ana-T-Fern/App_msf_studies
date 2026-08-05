@@ -42,7 +42,6 @@ st.title("⚡ DP-700 Daily Quest")
 
 def fetch_new_question(api_key):
     try:
-        # Configurar a API Key limpa
         clean_key = api_key.strip()
         genai.configure(api_key=clean_key)
 
@@ -57,9 +56,9 @@ def fetch_new_question(api_key):
         }
         """
 
-        # Usar o modelo padrão estável do SDK generativo
+        # Forçar o modelo 1.5-flash que tem quota gratuita ativa
         model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
+            model_name="gemini-1.5-flash",
             generation_config={"response_mime_type": "application/json"},
         )
 
@@ -67,17 +66,8 @@ def fetch_new_question(api_key):
         return json.loads(response.text)
 
     except Exception as e:
-        # Tenta o modelo secundário se o 2.5 não responder na tua região
-        try:
-            model = genai.GenerativeModel(
-                model_name="gemini-2.0-flash",
-                generation_config={"response_mime_type": "application/json"},
-            )
-            response = model.generate_content(prompt)
-            return json.loads(response.text)
-        except Exception as fallback_error:
-            st.error(f"Erro na API do Gemini: {fallback_error}")
-            return None
+        st.error(f"Erro de Quota/API: {e}")
+        return None
 
 
 # Input da API Key (só pede uma vez na interface ou podes guardar em segredo)
