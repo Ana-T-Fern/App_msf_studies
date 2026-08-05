@@ -56,9 +56,9 @@ def fetch_new_question(api_key):
         }
         """
 
-        # Forçar o modelo 1.5-flash que tem quota gratuita ativa
+        # Usar o modelo padrão ativo Gemini 2.5 Flash
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             generation_config={"response_mime_type": "application/json"},
         )
 
@@ -66,9 +66,17 @@ def fetch_new_question(api_key):
         return json.loads(response.text)
 
     except Exception as e:
-        st.error(f"Erro de Quota/API: {e}")
+        error_msg = str(e)
+        if "429" in error_msg or "quota" in error_msg.lower():
+            st.error(
+                "⚠️ Limite de pedidos atingido ou chave sem quota ativa."
+            )
+            st.info(
+                "Cria uma nova API Key num projeto NOVO em: https://aistudio.google.com/app/apikey"
+            )
+        else:
+            st.error(f"Erro na API: {error_msg}")
         return None
-
 
 # Input da API Key (só pede uma vez na interface ou podes guardar em segredo)
 api_key = st.text_input("Insere a tua Gemini API Key:", type="password")
