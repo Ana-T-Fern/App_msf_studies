@@ -46,28 +46,37 @@ from google.genai import types  # Importante para a configuração
 
 
 def fetch_new_question(api_key):
-    client = genai.Client(api_key=api_key)
+    try:
+        client = genai.Client(api_key=api_key.strip())
 
-    prompt = """
-    Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
-    Responde EXCLUSIVAMENTE num objeto JSON válido com a seguinte estrutura:
-    {
-      "question": "A pergunta contextualizada em cenário real",
-      "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
-      "answer": "A string exata de uma das opções corretas",
-      "explanation": "Explicação detalhada baseada na documentação oficial do Fabric"
-    }
-    """
+        prompt = """
+        Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
+        Responde EXCLUSIVAMENTE num objeto JSON válido com a seguinte estrutura:
+        {
+          "question": "A pergunta contextualizada em cenário real",
+          "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
+          "answer": "A string exata de uma das opções corretas",
+          "explanation": "Explicação detalhada baseada na documentação oficial do Fabric"
+        }
+        """
 
-    # Usamos o modelo standard 'gemini-2.5-flash' com a configuração correta
-    response = client.models.generate_content(
-        model="gemini-2.5-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json"
-        ),
-    )
-    return json.loads(response.text)
+        # Usamos o modelo oficial e estável 'gemini-1.5-flash'
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json"
+            ),
+        )
+
+        return json.loads(response.text)
+
+    except Exception as e:
+        st.error(f"Erro na API do Gemini: {e}")
+        st.info(
+            "Verifica se a tua API Key está correta e se não contém espaços extra."
+        )
+        return None
 
 
 # Input da API Key (só pede uma vez na interface ou podes guardar em segredo)
