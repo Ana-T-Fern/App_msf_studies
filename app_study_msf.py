@@ -47,7 +47,9 @@ from google.genai import types  # Importante para a configuração
 
 def fetch_new_question(api_key):
     try:
-        client = genai.Client(api_key=api_key.strip())
+        # Limpa espaços invisíveis que possam ir ao colar a chave
+        clean_key = api_key.strip()
+        client = genai.Client(api_key=clean_key)
 
         prompt = """
         Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
@@ -60,9 +62,9 @@ def fetch_new_question(api_key):
         }
         """
 
-        # Usamos o modelo oficial e estável 'gemini-1.5-flash'
+        # Usar o identificador 'gemini-2.5-flash' com fallback automático
         response = client.models.generate_content(
-            model="gemini-1.5-flash",
+            model="models/gemini-2.5-flash",
             contents=prompt,
             config=types.GenerateContentConfig(
                 response_mime_type="application/json"
@@ -72,11 +74,19 @@ def fetch_new_question(api_key):
         return json.loads(response.text)
 
     except Exception as e:
-        st.error(f"Erro na API do Gemini: {e}")
-        st.info(
-            "Verifica se a tua API Key está correta e se não contém espaços extra."
-        )
-        return None
+        # Se falhar com o 2.5, tenta o fallback com o 1.5
+        try:
+            response = client.models.generate_content(
+                model="models/gemini-1.5-flash",
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json"
+                ),
+            )
+            return json.loads(response.text)
+        except Exception as fallback_error:
+            st.error(f"Erro na API do Gemini: {fallback_error}")
+            return None
 
 
 # Input da API Key (só pede uma vez na interface ou podes guardar em segredo)
