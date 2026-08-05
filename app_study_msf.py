@@ -1,22 +1,23 @@
 import json
-import google.generativeai as genai
+import random
+import requests
 import streamlit as st
 
 # Configuração da página para telemóvel
 st.set_page_config(page_title="DP-700 Quest", page_icon="⚡", layout="centered")
 
-# CSS personalizado para interface estilo "App Mobile"
+# CSS para interface estilo "App Mobile"
 st.markdown(
     """
     <style>
     .stApp { max-width: 480px; margin: 0 auto; }
-    div.stButton > button { width: 100%; border-radius: 12px; height: 3em; }
+    div.stButton > button { width: 100%; border-radius: 12px; height: 3em; background-color: #0078D4; color: white; font-weight: bold; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# Inicializar Estados do Jogo (XP, Streak, etc.)
+# Inicializar Estado do Jogo (Gamificação)
 if "xp" not in st.session_state:
     st.session_state.xp = 0
 if "streak" not in st.session_state:
@@ -26,7 +27,7 @@ if "current_q" not in st.session_state:
 if "answered" not in st.session_state:
     st.session_state.answered = False
 
-# Sidebar / Menu de Métricas (Gamificação)
+# Sidebar / Menu de Métricas
 st.sidebar.title("🏆 Teu Progresso")
 st.sidebar.metric("XP Total", st.session_state.xp)
 st.sidebar.metric("Dias Seguidos", f"{st.session_state.streak} 🔥")
@@ -35,77 +36,88 @@ readiness = min(100, int((st.session_state.xp / 1000) * 100))
 st.sidebar.progress(readiness / 100)
 st.sidebar.caption(f"Prontidão para o Exame: {readiness}%")
 
-st.title("⚡ DP-700 Daily Quest")
+st.title("⚡ DP-700 IA Quest")
 
 
-# Função para gerar pergunta inédita via Gemini API
-
-def fetch_new_question(api_key):
+def fetch_new_question_openrouter(api_key):
     try:
-        clean_key = api_key.strip()
-        genai.configure(api_key=clean_key)
+        url = "https://openrouter.ai/api/v1/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {api_key.strip()}",
+            "Content-Type": "application/json",
+        }
 
         prompt = """
-        Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
-        Responde EXCLUSIVAMENTE num objeto JSON válido com a seguinte estrutura:
+        Gera 1 pergunta inédita e de alta dificuldade em Português para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
+        Responde EXCLUSIVAMENTE num objeto JSON válido com este formato exato:
         {
-          "question": "A pergunta contextualizada em cenário real",
+          "question": "Texto da pergunta em cenário real",
           "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
-          "answer": "A string exata de uma das opções corretas",
-          "explanation": "Explicação detalhada baseada na documentação oficial do Fabric"
+          "answer": "Texto exato de uma das opções acima que está correta",
+          "explanation": "Explicação detalhada baseada na documentação do Microsoft Fabric"
         }
         """
 
-        # Usar o modelo padrão ativo Gemini 2.5 Flash
-        model = genai.GenerativeModel(
-            model_name="gemini-2.5-flash",
-            generation_config={"response_mime_type": "application/json"},
-        )
+        payload = {
+            "model": "meta-llama/llama-3.3-70b-instruct:free",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "És um especialista no exame Microsoft Fabric DP-700. Respondes apenas em formato JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "response_format": {"type": "json_object"},
+        }
 
-        response = model.generate_content(prompt)
-        return json.loads(response.text)
+        response = requests.post(url, headers=headers, json=payload, timeout=15)
+        res_data = response.json()
+
+        if "choices" in res_data:
+            content = res_data["choices"][0]["message"]["content"]
+            return json.loads(content)
+        else:
+            st.error(f"Erro no OpenRouter: {res_data}")
+            return None
 
     except Exception as e:
-        error_msg = str(e)
-        if "429" in error_msg or "quota" in error_msg.lower():
-            st.error(
-                "⚠️ Limite de pedidos atingido ou chave sem quota ativa."
-            )
-            st.info(
-                "Cria uma nova API Key num projeto NOVO em: https://aistudio.google.com/app/apikey"
-            )
-        else:
-            st.error(f"Erro na API: {error_msg}")
+        st.error(f"Erro ao gerar pergunta: {e}")
         return None
 
-# Input da API Key (só pede uma vez na interface ou podes guardar em segredo)
-api_key = st.text_input("Insere a tua Gemini API Key:", type="password")
+
+# Input da API Key do OpenRouter
+api_key = st.text_input(
+    "Insere a tua OpenRouter API Key (sk-or-v1-...):", type="password"
+)
 
 if api_key:
-    # Botão para gerar pergunta ou carregar a primeira
     if st.session_state.current_q is None or st.button("🔄 Próxima Pergunta"):
-        with st.spinner("A IA está a criar uma pergunta nova..."):
-            st.session_state.current_q = fetch_new_question(api_key)
+        with st.spinner("A IA está a gerar uma nova pergunta..."):
+            st.session_state.current_q = fetch_new_question_openrouter(api_key)
             st.session_state.answered = False
             st.rerun()
 
-    # Exibir Pergunta Atual
     q = st.session_state.current_q
     if q:
         st.subheader("Pergunta:")
         st.write(q["question"])
 
-        selected = st.radio("Escolhe a tua resposta:", q["options"], key="radio_q")
+        selected = st.radio("Escolhe a tua resposta:", q["options"], key="q_radio")
 
-        if st.button("Confirmar Resposta") and not st.session_state.answered:
-            st.session_state.answered = True
-            if selected == q["answer"]:
-                st.balloons()
-                st.success("🎉 Correto! +100 XP")
-                st.session_state.xp += 100
+        if st.button("Confirmar Resposta"):
+            if not st.session_state.answered:
+                st.session_state.answered = True
+                if selected == q["answer"]:
+                    st.balloons()
+                    st.success("🎉 Correto! +100 XP")
+                    st.session_state.xp += 100
+                else:
+                    st.error(f"❌ Errado. A resposta correta era: **{q['answer']}**")
+
+                st.info(f"**Explicação:** {q['explanation']}")
             else:
-                st.error(f"❌ Errado. A resposta correta era: **{q['answer']}**")
-
-            st.info(f"**Explicação:** {q['explanation']}")
+                st.warning("Clica em '🔄 Próxima Pergunta' para continuar!")
 else:
-    st.warning("Insere a tua API Key do Gemini acima para começar a jogar.")
+    st.info(
+        "Insere a tua chave do OpenRouter acima para gerar perguntas infinitas!"
+    )
