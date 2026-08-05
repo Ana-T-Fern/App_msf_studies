@@ -39,8 +39,15 @@ st.title("⚡ DP-700 Daily Quest")
 
 
 # Função para gerar pergunta inédita via Gemini API
+import json
+import streamlit as st
+from google import genai
+from google.genai import types  # Importante para a configuração
+
+
 def fetch_new_question(api_key):
     client = genai.Client(api_key=api_key)
+
     prompt = """
     Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
     Responde EXCLUSIVAMENTE num objeto JSON válido com a seguinte estrutura:
@@ -51,10 +58,14 @@ def fetch_new_question(api_key):
       "explanation": "Explicação detalhada baseada na documentação oficial do Fabric"
     }
     """
+
+    # Usamos o modelo standard 'gemini-2.5-flash' com a configuração correta
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt,
-        config={"response_mime_type": "application/json"},
+        config=types.GenerateContentConfig(
+            response_mime_type="application/json"
+        ),
     )
     return json.loads(response.text)
 
