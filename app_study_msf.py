@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import requests
 import streamlit as st
 
@@ -17,7 +18,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Inicializar Estado do Jogo (Gamificação)
+# Inicializar Estado do Jogo
 if "xp" not in st.session_state:
     st.session_state.xp = 0
 if "streak" not in st.session_state:
@@ -39,9 +40,9 @@ st.sidebar.caption(f"Prontidão para o Exame: {readiness}%")
 st.title("⚡ DP-700 IA Quest")
 
 
-def fetch_new_question_openrouter(api_key):
+def fetch_new_question_hf(api_key):
     try:
-        url = "https://openrouter.ai/api/v1/chat/completions"
+        url = "https://api-inference.huggingface.co/models/Qwen/Qwen2.5-Coder-32B-Instruct/v1/chat/completions"
         headers = {
             "Authorization": f"Bearer {api_key.strip()}",
             "Content-Type": "application/json",
@@ -49,71 +50,55 @@ def fetch_new_question_openrouter(api_key):
 
         prompt = """
         Gera 1 pergunta inédita e de alta dificuldade em Português para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
-        Responde EXCLUSIVAMENTE com um objeto JSON válido no formato:
+        Responde EXCLUSIVAMENTE num objeto JSON válido com este formato exato:
         {
           "question": "Texto da pergunta em cenário real",
           "options": ["Opção A", "Opção B", "Opção C", "Opção D"],
           "answer": "Texto exato de uma das opções acima que está correta",
           "explanation": "Explicação detalhada baseada na documentação do Microsoft Fabric"
         }
-        Não inclua marcadores de código como ```json ou texto adicional fora do JSON.
+        Não escrevas nada antes nem depois do JSON.
         """
 
-        # Lista de modelos gratuitos ativos e de alta disponibilidade no OpenRouter
-        free_models = [
-            "deepseek/deepseek-r1:free",
-            "qwen/qwen-2.5-72b-instruct:free",
-            "meta-llama/llama-3.1-8b-instruct:free",
-        ]
+        payload = {
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "És um especialista no exame Microsoft Fabric DP-700. Respondes apenas em formato JSON estrito.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            "max_tokens": 1000,
+            "temperature": 0.7,
+        }
 
-        for model_name in free_models:
-            payload = {
-                "model": model_name,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "És um especialista no exame Microsoft Fabric DP-700. Respondes apenas em formato JSON estrito.",
-                    },
-                    {"role": "user", "content": prompt},
-                ],
-            }
+        response = requests.post(url, headers=headers, json=payload, timeout=20)
+        res_data = response.json()
 
-            response = requests.post(
-                url, headers=headers, json=payload, timeout=20
-            )
-            res_data = response.json()
+        if "choices" in res_data and len(res_data["choices"]) > 0:
+            content = res_data["choices"][0]["message"]["content"]
+            content_clean = re.sub(r"```json\s*|\s*```", "", content).strip()
+            json_match = re.search(r"\{.*\}", content_clean, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group(0))
 
-            if "choices" in res_data and len(res_data["choices"]) > 0:
-                content = res_data["choices"][0]["message"]["content"]
-
-                # Limpar possíveis blocos markdown ```json ... ```
-                content_clean = re.sub(
-                    r"```json\s*|\s*```", "", content
-                ).strip()
-
-                # Tentar extrair o JSON do texto se houver caracteres extras
-                json_match = re.search(r"\{.*\}", content_clean, re.DOTALL)
-                if json_match:
-                    return json.loads(json_match.group(0))
-
-        st.error(
-            "Nenhum dos modelos gratuitos respondeu no momento. Tenta novamente em alguns segundos."
-        )
+        st.error(f"Erro no resposta da Hugging Face: {res_data}")
         return None
 
     except Exception as e:
-        st.error(f"Erro ao processar pergunta: {e}")
+        st.error(f"Erro ao gerar pergunta: {e}")
         return None
 
-# Input da API Key do OpenRouter
+
+# Input do Token da Hugging Face
 api_key = st.text_input(
-    "Insere a tua OpenRouter API Key (sk-or-v1-...):", type="password"
+    "Insere o teu Hugging Face Token (hf_...):", type="password"
 )
 
 if api_key:
     if st.session_state.current_q is None or st.button("🔄 Próxima Pergunta"):
         with st.spinner("A IA está a gerar uma nova pergunta..."):
-            st.session_state.current_q = fetch_new_question_openrouter(api_key)
+            st.session_state.current_q = fetch_new_question_hf(api_key)
             st.session_state.answered = False
             st.rerun()
 
@@ -139,5 +124,5 @@ if api_key:
                 st.warning("Clica em '🔄 Próxima Pergunta' para continuar!")
 else:
     st.info(
-        "Insere a tua chave do OpenRouter acima para gerar perguntas infinitas!"
+        "Insere o teu Token da Hugging Face (hf_...) acima para gerar perguntas infinitas!"
     )
