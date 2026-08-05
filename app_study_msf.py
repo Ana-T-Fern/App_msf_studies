@@ -1,6 +1,6 @@
 import json
+import google.generativeai as genai
 import streamlit as st
-from google import genai
 
 # Configuração da página para telemóvel
 st.set_page_config(page_title="DP-700 Quest", page_icon="⚡", layout="centered")
@@ -39,17 +39,12 @@ st.title("⚡ DP-700 Daily Quest")
 
 
 # Função para gerar pergunta inédita via Gemini API
-import json
-import streamlit as st
-from google import genai
-from google.genai import types  # Importante para a configuração
-
 
 def fetch_new_question(api_key):
     try:
-        # Limpa espaços invisíveis que possam ir ao colar a chave
+        # Configurar a API Key limpa
         clean_key = api_key.strip()
-        client = genai.Client(api_key=clean_key)
+        genai.configure(api_key=clean_key)
 
         prompt = """
         Gera 1 pergunta inédita e de alta dificuldade para o exame Microsoft Certified: Fabric Data Engineer Associate (DP-700).
@@ -62,27 +57,23 @@ def fetch_new_question(api_key):
         }
         """
 
-        # Usar o identificador 'gemini-2.5-flash' com fallback automático
-        response = client.models.generate_content(
-            model="models/gemini-2.5-flash",
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json"
-            ),
+        # Usar o modelo padrão estável do SDK generativo
+        model = genai.GenerativeModel(
+            model_name="gemini-2.5-flash",
+            generation_config={"response_mime_type": "application/json"},
         )
 
+        response = model.generate_content(prompt)
         return json.loads(response.text)
 
     except Exception as e:
-        # Se falhar com o 2.5, tenta o fallback com o 1.5
+        # Tenta o modelo secundário se o 2.5 não responder na tua região
         try:
-            response = client.models.generate_content(
-                model="models/gemini-1.5-flash",
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json"
-                ),
+            model = genai.GenerativeModel(
+                model_name="gemini-2.0-flash",
+                generation_config={"response_mime_type": "application/json"},
             )
+            response = model.generate_content(prompt)
             return json.loads(response.text)
         except Exception as fallback_error:
             st.error(f"Erro na API do Gemini: {fallback_error}")
