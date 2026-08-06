@@ -1,47 +1,1128 @@
-[
+[  
   {
     "id": 1,
     "topic": "Microsoft Fabric / DP-700",
-    "question": "Precisas de armazenar dados semi-estruturados em formato Delta Lake no Fabric para serem alterados via Spark e consultados via T-SQL. Qual item deves criar?",
+    "question": "You need to store semi-structured data in Delta Lake format in Fabric to be modified via Spark and queried via T-SQL. Which item should you create?",
     "options": ["A) Data Warehouse", "B) Lakehouse", "C) Eventhouse", "D) Dataflow Gen2"],
     "answer": "B) Lakehouse",
-    "explanation": "O Lakehouse suporta nativamente escritas via Spark em tabelas Delta e expõe automaticamente um SQL Analytics Endpoint."
+    "explanation": "A Lakehouse natively supports Spark writes to Delta tables and automatically exposes a SQL Analytics Endpoint for T-SQL querying."
   },
   {
     "id": 2,
     "topic": "Microsoft Fabric / DP-700",
-    "question": "Que funcionalidade exclusiva do Fabric otimiza a compressão e ordenação de ficheiros Parquet para carregamento ultra-rápido no Direct Lake do Power BI?",
-    "options": ["A) SHA-256 Hashing", "B) V-Order", "C) Z-Ordering clássico", "D) CSV Conversion"],
-    "answer": "B) V-Order",
-    "explanation": "O V-Order é uma otimização de escrita do Fabric que prepara os dados para o motor VertiPaq do Direct Lake."
+    "question": "What is the main difference between a Lakehouse and a Data Warehouse in Microsoft Fabric regarding data modification?",
+    "options": [
+      "A) Lakehouses support T-SQL updates, Warehouses do not.",
+      "B) Warehouses support Spark updates, Lakehouses do not.",
+      "C) Lakehouses support Spark for writes, while Warehouses support T-SQL for writes.",
+      "D) There is no difference; both support Spark and T-SQL for writes."
+    ],
+    "answer": "C) Lakehouses support Spark for writes, while Warehouses support T-SQL for writes.",
+    "explanation": "In Fabric, the Lakehouse SQL endpoint is read-only. To write/update data in a Lakehouse, you must use Spark or Data Factory. Warehouses use T-SQL for DML operations."
   },
   {
     "id": 3,
-    "topic": "Data Engineering / General",
-    "question": "Num cluster Apache Spark, qual é o componente responsável por coordenar a execução do código e distribuir as tarefas pelos worker nodes?",
-    "options": ["A) Executor Node", "B) Driver Node", "C) Cluster Manager", "D) Worker Node"],
-    "answer": "B) Driver Node",
-    "explanation": "O Driver Node mantém as informações sobre a aplicação Spark e distribui as tarefas (tasks) pelos executores."
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which feature allows you to reference data stored in Azure Data Lake Storage Gen2 inside a Fabric Lakehouse without moving the data?",
+    "options": ["A) Mirroring", "B) Pipelines", "C) Shortcuts", "D) V-Order"],
+    "answer": "C) Shortcuts",
+    "explanation": "Shortcuts allow you to virtualize data from external sources (ADLS Gen2, S3, etc.) into OneLake without copying it."
   },
   {
     "id": 4,
-    "topic": "Data Engineering / General",
-    "question": "O que caracteriza uma arquitetura de dados em estrela (Star Schema) numa base de dados analítica?",
-    "options": [
-      "A) Tabelas de dimensão totalmente normalizadas até à 3ª Forma Normal",
-      "B) Uma tabela de factos central conectada a tabelas de dimensão desnormalizadas",
-      "C) Tabelas sem chaves primárias nem relacionamentos",
-      "D) Armazenamento exclusivo em ficheiros sem suporte a SQL"
-    ],
-    "answer": "B) Uma tabela de factos central conectada a tabelas de dimensão desnormalizadas",
-    "explanation": "O Star Schema centra-se numa tabela de factos rodeada por dimensões diretamente conectadas, simplificando consultas analíticas."
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You want to optimize the read performance of Delta tables for Power BI Direct Lake mode. Which Fabric-specific optimization should you ensure is enabled?",
+    "options": ["A) Z-Order", "B) V-Order", "C) Vacuum", "D) Indexing"],
+    "answer": "B) V-Order",
+    "explanation": "V-Order is a write-time optimization in Fabric that enhances the Parquet file format for lightning-fast reads in Power BI and Spark."
   },
   {
     "id": 5,
     "topic": "Microsoft Fabric / DP-700",
-    "question": "Como podes reutilizar dados no Azure Data Lake Storage Gen2 (ADLS Gen2) dentro do OneLake do Fabric sem copiar os dados fisicamente?",
-    "options": ["A) Criar um Shortcut (Atalho)", "B) Usar Dataflow Gen2", "C) Ferramenta AzCopy", "D) Mirroring"],
-    "answer": "A) Criar um Shortcut (Atalho)",
-    "explanation": "Os Shortcuts mapeiam caminhos de armazenamento externo diretamente no OneLake sem duplicação de dados."
+    "question": "In a Lakehouse, you see two folders: 'Tables' and 'Files'. You upload a CSV to 'Files'. What must you do to query it as a Delta table in the SQL Analytics Endpoint?",
+    "options": [
+      "A) Nothing, it is automatic.",
+      "B) Move it to the 'Tables' folder using a Spark Notebook or Dataflow and convert it to Delta format.",
+      "C) Rename the file extension to .delta.",
+      "D) Right-click and select 'Add to SQL'."
+    ],
+    "answer": "B) Move it to the 'Tables' folder using a Spark Notebook or Dataflow and convert it to Delta format.",
+    "explanation": "The SQL Analytics Endpoint only recognizes tables in the 'Tables' folder that are in Delta format."
+  },
+  {
+    "id": 6,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which engine is used to provide the 'SQL Analytics Endpoint' of a Lakehouse?",
+    "options": ["A) Spark Engine", "B) KQL Engine", "C) Polaris (Synapse Data Warehouse engine)", "D) Analysis Services"],
+    "answer": "C) Polaris (Synapse Data Warehouse engine)",
+    "explanation": "The SQL Analytics Endpoint uses the same distributed query engine as the Fabric Data Warehouse to provide T-SQL read capabilities."
+  },
+  {
+    "id": 7,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "A data engineer needs to remove old versions of Delta table files that are no longer needed to save storage costs. Which command should be used?",
+    "options": ["A) OPTIMIZE", "B) COMPACT", "C) VACUUM", "D) DELETE"],
+    "answer": "C) VACUUM",
+    "explanation": "The VACUUM command removes data files that are no longer referenced by a Delta table and are older than the retention threshold."
+  },
+  {
+    "id": 8,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which connection mode allows Power BI to query Lakehouse Delta tables directly from OneLake without importing data or using DirectQuery?",
+    "options": ["A) Import Mode", "B) DirectQuery", "C) Direct Lake", "D) Live Connection"],
+    "answer": "C) Direct Lake",
+    "explanation": "Direct Lake mode loads Parquet files directly from OneLake into the Power BI engine memory, providing Import-like performance without the need for refreshes."
+  },
+  {
+    "id": 9,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You need to implement column-level security for a Lakehouse. Where should you apply these restrictions?",
+    "options": [
+      "A) In the Lakehouse Explorer",
+      "B) In the SQL Analytics Endpoint using T-SQL GRANT/DENY",
+      "C) In the Spark Notebook",
+      "D) In the OneLake settings"
+    ],
+    "answer": "B) In the SQL Analytics Endpoint using T-SQL GRANT/DENY",
+    "explanation": "Security features like Column-level security (CLS) and Row-level security (RLS) are managed within the SQL Analytics Endpoint."
+  },
+  {
+    "id": 10,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "How can you create a Shortcut to a folder in an Amazon S3 bucket within a Fabric Lakehouse?",
+    "options": [
+      "A) Use a Data Factory Copy activity.",
+      "B) Use the 'New shortcut' option in the Lakehouse 'Files' or 'Tables' section.",
+      "C) Mount S3 using a Spark Notebook first.",
+      "D) Shortcuts only work for Azure resources."
+    ],
+    "answer": "B) Use the 'New shortcut' option in the Lakehouse 'Files' or 'Tables' section.",
+    "explanation": "Fabric supports shortcuts to external providers like Amazon S3 and Google Cloud Storage directly from the UI."
+  },
+  {
+    "id": 11,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "In the medallion architecture, which layer is typically characterized by raw data stored in its original format?",
+    "options": ["A) Bronze", "B) Silver", "C) Gold", "D) Platinum"],
+    "answer": "A) Bronze",
+    "explanation": "The Bronze layer (Raw zone) stores data in its original source format for historical retention and audit."
+  },
+  {
+    "id": 12,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What happens when you enable 'Schema Drift' in a Spark job writing to a Lakehouse Delta table?",
+    "options": [
+      "A) The job fails if the schema changes.",
+      "B) The table automatically adds new columns as they appear in the source.",
+      "C) It deletes columns that are not in the source.",
+      "D) It converts all data to strings."
+    ],
+    "answer": "B) The table automatically adds new columns as they appear in the source.",
+    "explanation": "Delta Lake allows schema evolution (drift), enabling the table to adapt to new incoming data columns without manual intervention."
+  },
+  {
+    "id": 13,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which tool is best suited for low-code/no-code data transformation before loading data into a Lakehouse?",
+    "options": ["A) Spark Notebooks", "B) Dataflow Gen2", "C) KQL Queryset", "D) T-SQL Scripts"],
+    "answer": "B) Dataflow Gen2",
+    "explanation": "Dataflow Gen2 provides a Power Query online interface for low-code data transformation and ingestion into Fabric items."
+  },
+  {
+    "id": 14,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You have a Lakehouse and want to create a reusable logic (like a JOIN between two tables) for T-SQL users. What should you create?",
+    "options": ["A) A Delta Table", "B) A View in the SQL Analytics Endpoint", "C) A Shortcut", "D) A Semantic Model"],
+    "answer": "B) A View in the SQL Analytics Endpoint",
+    "explanation": "The SQL Analytics Endpoint allows you to create Views and Functions using T-SQL, even though the base tables are read-only."
+  },
+  {
+    "id": 15,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which Fabric permission is the minimum required for a user to see the SQL Analytics Endpoint and query tables using T-SQL?",
+    "options": ["A) Viewer", "B) Contributor", "C) Member", "D) Admin"],
+    "answer": "A) Viewer",
+    "explanation": "Users with the 'Viewer' role in a workspace can access the SQL Analytics Endpoint and the default semantic model if they have Read permissions on the item."
+  },
+  {
+    "id": 16,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "To use 'Direct Lake' mode in Power BI, the Delta tables must reside in which storage location?",
+    "options": ["A) Azure SQL Database", "B) OneLake", "C) Power BI Workspace storage", "D) Local Storage"],
+    "answer": "B) OneLake",
+    "explanation": "Direct Lake is a unique capability of Fabric where the Power BI engine reads Delta/Parquet files directly from OneLake."
+  },
+  {
+    "id": 17,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the primary purpose of 'Liquid Clustering' in Delta tables within a Lakehouse?",
+    "options": [
+      "A) To encrypt data.",
+      "B) To replace manual partitioning and Z-Ordering for better performance flexibility.",
+      "C) To compress data into smaller files.",
+      "D) To manage data deletions."
+    ],
+    "answer": "B) To replace manual partitioning and Z-Ordering for better performance flexibility.",
+    "explanation": "Liquid Clustering simplifies performance tuning by automatically clustering data, replacing the need for static partitions and Z-Order."
+  },
+  {
+    "id": 18,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You need to ingest data from an on-premises SQL Server into a Lakehouse. Which Fabric component should you use to orchestrate this move?",
+    "options": ["A) Spark Job Definition", "B) Data Pipeline", "C) Eventstream", "D) OneLake File Explorer"],
+    "answer": "B) Data Pipeline",
+    "explanation": "Data Pipelines (Data Factory) are designed for data orchestration and ingestion, including connecting to on-premises sources via gateways."
+  },
+  {
+    "id": 19,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Can you run a DELETE statement on a Lakehouse table from the SQL Analytics Endpoint query editor?",
+    "options": ["A) Yes, if you are an Admin.", "B) No, the SQL Analytics Endpoint is read-only.", "C) Yes, if the table is small.", "D) Only if the table has no primary key."],
+    "answer": "B) No, the SQL Analytics Endpoint is read-only.",
+    "explanation": "The SQL Analytics Endpoint is strictly for reading. Modifications must be done via Spark or other ingestion tools."
+  },
+  {
+    "id": 20,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the default file format for tables in a Microsoft Fabric Lakehouse?",
+    "options": ["A) CSV", "B) JSON", "C) Delta (Parquet)", "D) Avro"],
+    "answer": "C) Delta (Parquet)",
+    "explanation": "Delta Lake is the native table format for Microsoft Fabric, which uses Parquet as its underlying storage format."
+  },
+  {
+    "id": 21,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "A user wants to access OneLake data using the Windows File Explorer. What should they install?",
+    "options": ["A) Azure Storage Explorer", "B) OneLake File Explorer", "C) OneDrive for Business", "D) SQL Server Management Studio"],
+    "answer": "B) OneLake File Explorer",
+    "explanation": "The OneLake File Explorer app integrates OneLake with Windows File Explorer, allowing users to browse and interact with files like a local drive."
+  },
+  {
+    "id": 22,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "In Spark, which command would you use to save a DataFrame named 'df' as a managed table in the Lakehouse?",
+    "options": [
+      "A) df.save('table_name')",
+      "B) df.write.format('delta').saveAsTable('table_name')",
+      "C) df.write.csv('table_name')",
+      "D) df.createOrReplaceTempView('table_name')"
+    ],
+    "answer": "B) df.write.format('delta').saveAsTable('table_name')",
+    "explanation": "The standard Spark way to create a managed Delta table in the Lakehouse 'Tables' folder is using .saveAsTable()."
+  },
+  {
+    "id": 23,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is 'Time Travel' in the context of a Fabric Lakehouse?",
+    "options": [
+      "A) Predicting future data trends.",
+      "B) Querying older versions of data using Delta Lake transaction logs.",
+      "C) Moving data between workspaces.",
+      "D) Speeding up long-running Spark jobs."
+    ],
+    "answer": "B) Querying older versions of data using Delta Lake transaction logs.",
+    "explanation": "Time Travel allows you to query a Delta table at a specific point in time or version using the 'TIMESTAMP AS OF' or 'VERSION AS OF' syntax."
+  },
+  {
+    "id": 24,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You want to create a Lakehouse shortcut to a table in another Fabric Lakehouse located in a different workspace. Is this possible?",
+    "options": [
+      "A) No, shortcuts only work for external clouds.",
+      "B) Yes, this is called an internal OneLake shortcut.",
+      "C) Yes, but only if the workspaces are in the same region.",
+      "D) No, you must use a Data Pipeline to copy the data."
+    ],
+    "answer": "B) Yes, this is called an internal OneLake shortcut.",
+    "explanation": "OneLake shortcuts can point to internal Fabric locations (Lakehouses, Warehouses, KQL Databases) across different workspaces."
+  },
+  {
+    "id": 25,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which of the following is true regarding the 'Default Semantic Model' of a Lakehouse?",
+    "options": [
+      "A) You must manually create it after creating the Lakehouse.",
+      "B) It is automatically created and updated when tables are added to the 'Tables' folder.",
+      "C) It only supports Import mode.",
+      "D) It cannot be used in Power BI Desktop."
+    ],
+    "answer": "B) It is automatically created and updated when tables are added to the 'Tables' folder.",
+    "explanation": "Fabric automatically maintains a default semantic model for every Lakehouse, which uses Direct Lake mode by default."
+  },
+  {
+    "id": 26,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You need to share only a specific table in a Lakehouse with a colleague, without giving them access to the entire workspace. How can you achieve this?",
+    "options": [
+      "A) Workspace roles (Member/Contributor).",
+      "B) Item-level sharing with SQL permissions (GRANT) in the SQL Endpoint.",
+      "C) Move the table to a separate workspace.",
+      "D) Email the Parquet files."
+    ],
+    "answer": "B) Item-level sharing with SQL permissions (GRANT) in the SQL Endpoint.",
+    "explanation": "By sharing the Lakehouse and then using T-SQL GRANT statements in the SQL Endpoint, you can provide granular access to specific tables/views."
+  },
+  {
+    "id": 27,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "When building a Silver layer in a Lakehouse, what is the primary goal?",
+    "options": [
+      "A) To store raw data for archiving.",
+      "B) To provide cleaned, filtered, and joined data for downstream use.",
+      "C) To store highly aggregated data for dashboards.",
+      "D) To optimize data for Excel users."
+    ],
+    "answer": "B) To provide cleaned, filtered, and joined data for downstream use.",
+    "explanation": "The Silver layer (Enriched zone) focuses on data quality, consistency, and standardizing schemas."
+  },
+  {
+    "id": 28,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the impact of V-Order on the file size and writing time of Delta tables?",
+    "options": [
+      "A) It makes files larger and writing faster.",
+      "B) It makes files smaller and writing slightly slower due to the extra compression work.",
+      "C) It has no impact on file size.",
+      "D) It converts files into a proprietary binary format."
+    ],
+    "answer": "B) It makes files smaller and writing slightly slower due to the extra compression work.",
+    "explanation": "V-Order applies advanced compression and sorting during the write phase, which slightly increases write time but significantly improves read speed and reduces storage footprint."
+  },
+  {
+    "id": 29,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which Spark language is most commonly used for data engineering tasks in Fabric Lakehouses?",
+    "options": ["A) PySpark", "B) Spark SQL", "C) Scala", "D) All of the above"],
+    "answer": "D) All of the above",
+    "explanation": "Fabric Notebooks support PySpark, Spark SQL, Scala, and R, allowing engineers to choose the best language for the task."
+  },
+  {
+    "id": 30,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "If you delete a 'Shortcut' in a Lakehouse, what happens to the source data?",
+    "options": [
+      "A) The source data is deleted.",
+      "B) The source data remains intact; only the reference is removed.",
+      "C) The source data is moved to the Recycle Bin.",
+      "D) The source data is corrupted."
+    ],
+    "answer": "B) The source data remains intact; only the reference is removed.",
+    "explanation": "Shortcuts are just pointers; deleting them does not affect the data in the original location (ADLS, S3, or another Lakehouse)."
+  },
+  {
+    "id": 31,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which component of Microsoft Fabric allows you to view the relationship between different items like Lakehouses, Pipelines, and Semantic Models?",
+    "options": ["A) Monitoring Hub", "B) Lineage View", "C) OneLake Explorer", "D) Settings"],
+    "answer": "B) Lineage View",
+    "explanation": "Lineage View provides a graphical representation of how data flows between different items in a workspace."
+  },
+  {
+    "id": 32,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What happens when you run 'OPTIMIZE' on a Delta table?",
+    "options": [
+      "A) It compacts small files into larger ones for better performance.",
+      "B) It deletes the transaction history.",
+      "C) It encrypts the data files.",
+      "D) It exports the data to CSV."
+    ],
+    "answer": "A) It compacts small files into larger ones for better performance.",
+    "explanation": "The OPTIMIZE command addresses the 'small file problem' by merging many small Parquet files into larger, more efficient files."
+  },
+  {
+    "id": 33,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which Fabric item is best for handling high-velocity, real-time streaming data before it is ingested into a Lakehouse?",
+    "options": ["A) Eventhouse", "B) Data Warehouse", "C) Dataflow Gen2", "D) Notebook"],
+    "answer": "A) Eventhouse",
+    "explanation": "Eventhouses (using KQL) are optimized for real-time analytics and high-volume streaming data."
+  },
+  {
+    "id": 34,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "How can you trigger a Spark Notebook to run every day at 8:00 AM?",
+    "options": [
+      "A) Use the 'Schedule' setting directly on the Notebook.",
+      "B) Add the Notebook to a Data Pipeline and set a schedule trigger for the pipeline.",
+      "C) Keep the Notebook open in the browser.",
+      "D) Both A and B are correct."
+    ],
+    "answer": "D) Both A and B are correct.",
+    "explanation": "Fabric allows you to schedule Notebooks directly or orchestrate them as part of a Data Pipeline."
+  },
+  {
+    "id": 35,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the main benefit of using 'Managed Tables' in a Lakehouse?",
+    "options": [
+      "A) They can be written via T-SQL.",
+      "B) Fabric manages the metadata and file lifecycle in OneLake 'Tables' folder.",
+      "C) They don't use Delta format.",
+      "D) They are only visible in Spark."
+    ],
+    "answer": "B) Fabric manages the metadata and file lifecycle in OneLake 'Tables' folder.",
+    "explanation": "Managed tables are stored in the 'Tables' section of the Lakehouse and are fully integrated with the SQL endpoint and Semantic Model."
+  },
+  {
+    "id": 36,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You need to ingest data from a REST API into a Lakehouse. Which is the most appropriate Fabric tool?",
+    "options": ["A) Data Pipeline", "B) SQL Analytics Endpoint", "C) OneLake File Explorer", "D) T-SQL"],
+    "answer": "A) Data Pipeline",
+    "explanation": "Data Pipelines have built-in connectors for REST APIs, making them ideal for this ingestion task."
+  },
+  {
+    "id": 37,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "When using 'Direct Lake' mode, what happens if the Power BI query requires a feature not supported by Direct Lake?",
+    "options": [
+      "A) The query fails.",
+      "B) It seamlessly falls back to DirectQuery mode via the SQL Analytics Endpoint.",
+      "C) It automatically switches to Import mode.",
+      "D) It restarts the Fabric capacity."
+    ],
+    "answer": "B) It seamlessly falls back to DirectQuery mode via the SQL Analytics Endpoint.",
+    "explanation": "Direct Lake has a 'fallback' mechanism to DirectQuery mode (via the SQL Endpoint) for compatibility, though this might be slower."
+  },
+  {
+    "id": 38,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "In a Lakehouse, which folder is typically used for non-Delta files like raw JSON, CSV, or images?",
+    "options": ["A) Tables", "B) Files", "C) Logs", "D) Shortcuts"],
+    "answer": "B) Files",
+    "explanation": "The 'Files' section is for unstructured or semi-structured data in its raw format. The 'Tables' section is reserved for Delta tables."
+  },
+  {
+    "id": 39,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which Spark feature allows you to combine multiple Lakehouse sources into a single Spark session easily?",
+    "options": ["A) Mounting", "B) Lakehouse Context / Explorer", "C) Dataflows", "D) OneLake API"],
+    "answer": "B) Lakehouse Context / Explorer",
+    "explanation": "In Fabric Notebooks, you can add multiple Lakehouses to the explorer sidebar and reference them in your code."
+  },
+  {
+    "id": 40,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "To enable cross-database queries between a Lakehouse and a Data Warehouse in Fabric, which language should you use?",
+    "options": ["A) PySpark", "B) T-SQL", "C) KQL", "D) DAX"],
+    "answer": "B) T-SQL",
+    "explanation": "Using the SQL Analytics Endpoint of the Lakehouse or the Warehouse, you can perform cross-item T-SQL queries using 3-part naming (e.g., [LakehouseName].[dbo].[TableName])."
+  },
+  {
+    "id": 41,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which of the following is NOT a benefit of OneLake?",
+    "options": [
+      "A) Data duplication avoidance via shortcuts.",
+      "B) Single logical lake for the whole organization.",
+      "C) Requirement to use only one specific compute engine.",
+      "D) Compatibility with ADLS Gen2 APIs."
+    ],
+    "answer": "C) Requirement to use only one specific compute engine.",
+    "explanation": "OneLake is open; it allows multiple engines (Spark, SQL, KQL, Analysis Services) to work on the same data."
+  },
+  {
+    "id": 42,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the purpose of 'Checkpoints' in Delta Lake used within Fabric?",
+    "options": [
+      "A) To save the progress of a Spark Streaming job.",
+      "B) To aggregate transaction logs into a Parquet file for faster metadata reading.",
+      "C) To back up the data to another region.",
+      "D) To validate the user's password."
+    ],
+    "answer": "B) To aggregate transaction logs into a Parquet file for faster metadata reading.",
+    "explanation": "Checkpoints in Delta Lake reduce the time needed to calculate the current state of a table by summarizing the transaction log."
+  },
+  {
+    "id": 43,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You notice that your Lakehouse tables are not appearing in the SQL Analytics Endpoint. What is the most likely reason?",
+    "options": [
+      "A) The tables are not in Delta format.",
+      "B) The tables are in the 'Files' folder instead of the 'Tables' folder.",
+      "C) The SQL Analytics Endpoint is paused.",
+      "D) Both A and B."
+    ],
+    "answer": "D) Both A and B.",
+    "explanation": "For a table to show up in the SQL Analytics Endpoint, it must be in the 'Tables' folder and stored in Delta Lake format."
+  },
+  {
+    "id": 44,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "How can you view the 'Files' content of a Lakehouse in a Spark Notebook?",
+    "options": [
+      "A) Using the path '/lakehouse/default/Files/'.",
+      "B) Files cannot be read by Spark.",
+      "C) Using T-SQL SELECT.",
+      "D) Only by downloading them first."
+    ],
+    "answer": "A) Using the path '/lakehouse/default/Files/'.",
+    "explanation": "Fabric Notebooks mount the Lakehouse files into the local file system of the Spark node under the /lakehouse/ path."
+  },
+  {
+    "id": 45,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What is the benefit of the 'Medallion' architecture in a Lakehouse implementation?",
+    "options": [
+      "A) It provides a structured way to improve data quality and readiness for consumption.",
+      "B) It reduces storage costs by 50%.",
+      "C) It replaces the need for Power BI.",
+      "D) It is a requirement for OneLake to function."
+    ],
+    "answer": "A) It provides a structured way to improve data quality and readiness for consumption.",
+    "explanation": "The Bronze/Silver/Gold flow ensures that data is progressively cleaned and transformed for business use."
+  },
+  {
+    "id": 46,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which of these is a valid 'Shortcut' source as of 2024?",
+    "options": [
+      "A) Azure Data Lake Storage Gen2",
+      "B) Amazon S3",
+      "C) Google Cloud Storage",
+      "D) All of the above"
+    ],
+    "answer": "D) All of the above",
+    "explanation": "Fabric has expanded shortcut support to include major cloud providers and internal Fabric items."
+  },
+  {
+    "id": 47,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "In a Lakehouse, you want to ensure that a certain column never contains NULL values. Where can you enforce this?",
+    "options": [
+      "A) In the SQL Analytics Endpoint (NOT NULL constraint).",
+      "B) During the Spark transformation logic (data validation).",
+      "C) It is not possible in a Lakehouse.",
+      "D) In the OneLake settings."
+    ],
+    "answer": "B) During the Spark transformation logic (data validation).",
+    "explanation": "Since the SQL Endpoint is read-only, schema constraints like NOT NULL must be handled during the write process in Spark or Dataflow."
+  },
+  {
+    "id": 48,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "What does the 'Optimize' command with 'Z-ORDER' do in a Spark Notebook?",
+    "options": [
+      "A) Sorts data based on specific columns to improve query performance via data skipping.",
+      "B) Compresses data using the ZIP format.",
+      "C) Deletes duplicate rows.",
+      "D) Changes the table owner."
+    ],
+    "answer": "A) Sorts data based on specific columns to improve query performance via data skipping.",
+    "explanation": "Z-Ordering co-locates related information in the same set of files, which allows the engine to skip unnecessary data during reads."
+  },
+  {
+    "id": 49,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "You need to automate the 'Vacuum' process for several Delta tables. What is the best way to do this in Fabric?",
+    "options": [
+      "A) It happens automatically every hour.",
+      "B) Create a Spark Notebook with the VACUUM command and schedule it in a Pipeline.",
+      "C) Use the SQL Analytics Endpoint.",
+      "D) It cannot be automated."
+    ],
+    "answer": "B) Create a Spark Notebook with the VACUUM command and schedule it in a Pipeline.",
+    "explanation": "Maintenance tasks like VACUUM are typically handled via scheduled Spark notebooks."
+  },
+  {
+    "id": 50,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Which Fabric tool allows you to visually design a data model (relationships) for your Lakehouse tables?",
+    "options": [
+      "A) Lakehouse Explorer",
+      "B) SQL Analytics Endpoint (Model View)",
+      "C) Spark Notebook",
+      "D) OneLake Explorer"
+    ],
+    "answer": "B) SQL Analytics Endpoint (Model View)",
+    "explanation": "The 'Model View' in the SQL Analytics Endpoint allows you to define relationships, measures, and hierarchies for the default semantic model."
+  },    
+  {
+    "id": 51,
+    "topic": "General Data Engineering",
+    "question": "In a Medallion architecture, which layer is responsible for providing high-quality, aggregated data for end-user reporting and BI?",
+    "options": ["A) Bronze", "B) Silver", "C) Gold", "D) Landing"],
+    "answer": "C) Gold",
+    "explanation": "The Gold layer contains business-level aggregates and refined data ready for consumption by BI tools and business users."
+  },
+  {
+    "id": 52,
+    "topic": "General Data Engineering",
+    "question": "What is the primary difference between ETL (Extract, Transform, Load) and ELT (Extract, Load, Transform)?",
+    "options": [
+      "A) ETL is only for cloud, ELT is for on-premises.",
+      "B) In ELT, data is transformed after it is loaded into the target data system, leveraging the target's compute power.",
+      "C) ETL does not require a staging area.",
+      "D) ELT is only used for streaming data."
+    ],
+    "answer": "B) In ELT, data is transformed after it is loaded into the target data system, leveraging the target's compute power.",
+    "explanation": "ELT loads raw data into the target (like a Lakehouse or Warehouse) first, then uses that system's engine to perform transformations."
+  },
+  {
+    "id": 53,
+    "topic": "General Data Engineering",
+    "question": "Which concept ensures that a data pipeline can be run multiple times with the same input and produce the same result without duplicating records?",
+    "options": ["A) Partitioning", "B) Idempotency", "C) Normalization", ") Scalability"],
+    "answer": "B) Idempotency",
+    "explanation": "Idempotency is a critical engineering principle where an operation can be applied multiple times without changing the result beyond the initial application."
+  },
+  {
+    "id": 54,
+    "topic": "General Data Engineering",
+    "question": "In dimensional modeling, which type of table typically contains quantitative measurements and foreign keys to descriptive tables?",
+    "options": ["A) Dimension table", "B) Fact table", "C) Lookup table", "D) Hierarchy table"],
+    "answer": "B) Fact table",
+    "explanation": "Fact tables store quantitative data (measures) and foreign keys that link to the surrounding dimension tables."
+  },
+  {
+    "id": 55,
+    "topic": "General Data Engineering",
+    "question": "A Slowly Changing Dimension (SCD) Type 2 is used to:",
+    "options": [
+      "A) Overwrite existing data with new values.",
+      "B) Keep the full history by creating a new row for every change.",
+      "C) Add a new column to store the previous value.",
+      "D) Delete old records once they change."
+    ],
+    "answer": "B) Keep the full history by creating a new row for every change.",
+    "explanation": "SCD Type 2 tracks historical changes by adding a new record with a unique surrogate key and versioning (e.g., Start Date/End Date)."
+  },
+  {
+    "id": 56,
+    "topic": "General Data Engineering",
+    "question": "Which file format is a row-based format often used for heavy write operations and streaming ingestion due to its compact binary structure?",
+    "options": ["A) Parquet", "B) CSV", "C) Avro", "D) JSON"],
+    "answer": "C) Avro",
+    "explanation": "Avro is a row-based format, making it efficient for write-intensive tasks and frequent schema updates in streaming scenarios."
+  },
+  {
+    "id": 57,
+    "topic": "General Data Engineering",
+    "question": "What is 'Data Skew' in a distributed computing environment like Spark?",
+    "options": [
+      "A) When data is evenly distributed across all nodes.",
+      "B) When one or a few partitions hold significantly more data than others, causing performance bottlenecks.",
+      "C) When data is stored in the wrong file format.",
+      "D) When the schema of a table changes frequently."
+    ],
+    "answer": "B) When one or a few partitions hold significantly more data than others, causing performance bottlenecks.",
+    "explanation": "Data skew occurs when the distribution of data is uneven, leading to some tasks taking much longer than others, slowing down the entire job."
+  },
+  {
+    "id": 58,
+    "topic": "General Data Engineering",
+    "question": "Which of the following describes a 'Star Schema'?",
+    "options": [
+      "A) A central fact table surrounded by normalized dimension tables.",
+      "B) A central fact table surrounded by denormalized dimension tables.",
+      "C) A series of interconnected fact tables with no dimensions.",
+      "D) A flat file containing all columns in one table."
+    ],
+    "answer": "B) A central fact table surrounded by denormalized dimension tables.",
+    "explanation": "A Star Schema consists of a large fact table and multiple denormalized dimension tables, resembling a star shape. It is optimized for query performance."
+  },
+  {
+    "id": 59,
+    "topic": "General Data Engineering",
+    "question": "What does the 'A' in ACID properties stand for in the context of database transactions?",
+    "options": ["A) Availability", "B) Atomicity", "C) Accuracy", "D) Aggregation"],
+    "answer": "B) Atomicity",
+    "explanation": "Atomicity ensures that a transaction is 'all or nothing'—it either completes fully or fails entirely."
+  },
+  {
+    "id": 60,
+    "topic": "General Data Engineering",
+    "question": "What is the primary purpose of 'Data Lineage'?",
+    "options": [
+      "A) To compress old data.",
+      "B) To track the origin, transformations, and movement of data across the data estate.",
+      "C) To encrypt sensitive columns.",
+      "D) To automate SQL queries."
+    ],
+    "answer": "B) To track the origin, transformations, and movement of data across the data estate.",
+    "explanation": "Data lineage provides visibility into the data journey, which is essential for troubleshooting, auditing, and impact analysis."
+  },
+  {
+    "id": 61,
+    "topic": "General Data Engineering",
+    "question": "In a distributed system, what is 'Shuffling'?",
+    "options": [
+      "A) Randomly deleting files to save space.",
+      "B) The process of redistributing data across partitions or nodes, often occurring during Joins or GroupBys.",
+      "C) Renaming columns in a table.",
+      "D) Converting CSV to Parquet."
+    ],
+    "answer": "B) The process of redistributing data across partitions or nodes, often occurring during Joins or GroupBys.",
+    "explanation": "Shuffling is an expensive operation in distributed systems where data is moved across the network to group related records together."
+  },
+  {
+    "id": 62,
+    "topic": "General Data Engineering",
+    "question": "Which architecture pattern involves processing data as it arrives in real-time, often using a 'speed layer' and a 'batch layer'?",
+    "options": ["A) Monolithic", "B) Lambda Architecture", "C) Star Schema", "D) Normalization"],
+    "answer": "B) Lambda Architecture",
+    "explanation": "Lambda architecture combines a traditional batch layer for historical accuracy and a speed layer for real-time results."
+  },
+  {
+    "id": 63,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Surrogate Key'?",
+    "options": [
+      "A) A natural key from the source system like an Email or SSN.",
+      "B) A unique, system-generated identifier used as a primary key in a data warehouse table.",
+      "C) A key used to encrypt data.",
+      "D) A secondary index on a column."
+    ],
+    "answer": "B) A unique, system-generated identifier used as a primary key in a data warehouse table.",
+    "explanation": "Surrogate keys are independent of source system changes and are used to uniquely identify records in a warehouse, especially for SCD Type 2."
+  },
+  {
+    "id": 64,
+    "topic": "General Data Engineering",
+    "question": "When designing a data model, what is the 'Snowflake Schema'?",
+    "options": [
+      "A) A schema where dimension tables are normalized into multiple related tables.",
+      "B) A schema where all data is in one single table.",
+      "C) A schema designed specifically for weather data.",
+      "D) A backup of a Star Schema."
+    ],
+    "answer": "A) A schema where dimension tables are normalized into multiple related tables.",
+    "explanation": "A Snowflake schema normalizes dimensions to reduce data redundancy, though it often requires more complex joins during querying."
+  },
+  {
+    "id": 65,
+    "topic": "General Data Engineering",
+    "question": "What is the primary benefit of Columnar storage (like Parquet) over Row-based storage (like CSV) for analytics?",
+    "options": [
+      "A) Faster single-row lookups.",
+      "B) Efficient data compression and faster aggregation of specific columns.",
+      "C) Simpler human-readability.",
+      "D) Better performance for frequent record updates."
+    ],
+    "answer": "B) Efficient data compression and faster aggregation of specific columns.",
+    "explanation": "Columnar storage allows the engine to read only the columns needed for a query and provides better compression ratios for repetitive data."
+  },
+  {
+    "id": 66,
+    "topic": "General Data Engineering",
+    "question": "What does 'Schema on Read' mean?",
+    "options": [
+      "A) The schema is strictly enforced when data is written to the database.",
+      "B) The data is stored raw, and the schema is applied only when the data is queried.",
+      "C) The schema is read from a printed document.",
+      "D) Every user has their own personal schema."
+    ],
+    "answer": "B) The data is stored raw, and the schema is applied only when the data is queried.",
+    "explanation": "Schema on Read is common in data lakes where raw files are stored and interpreted by the query engine (like Spark) at runtime."
+  },
+  {
+    "id": 67,
+    "topic": "General Data Engineering",
+    "question": "Which of the following is a 'Semi-structured' data format?",
+    "options": ["A) SQL Table", "B) JSON", "C) Fixed-width Flat File", "D) MP4 Video"],
+    "answer": "B) JSON",
+    "explanation": "JSON contains tags and hierarchies but does not require a rigid, fixed schema, making it semi-structured."
+  },
+  {
+    "id": 68,
+    "topic": "General Data Engineering",
+    "question": "What is the purpose of a 'Bridge Table' in a dimensional model?",
+    "options": [
+      "A) To connect two different databases.",
+      "B) To handle many-to-many relationships between dimensions and facts.",
+      "C) To store temporary data.",
+      "D) To speed up data ingestion."
+    ],
+    "answer": "B) To handle many-to-many relationships between dimensions and facts.",
+    "explanation": "Bridge tables are used to resolve many-to-many relationships, such as a single sale belonging to multiple sales representatives."
+  },
+  {
+    "id": 69,
+    "topic": "General Data Engineering",
+    "question": "Which term describes the process of cleaning, standardizing, and deduplicating data to ensure a 'Single Source of Truth'?",
+    "options": ["A) Data Virtualization", "B) Data Cleansing / Data Wrangling", "C) Data Masking", "D) Data Replication"],
+    "answer": "B) Data Cleansing / Data Wrangling",
+    "explanation": "Data cleansing or wrangling involves preparing raw data for analysis by fixing errors and removing inconsistencies."
+  },
+  {
+    "id": 70,
+    "topic": "General Data Engineering",
+    "question": "What is 'Micro-batching' in the context of stream processing?",
+    "options": [
+      "A) Processing data one single record at a time with zero latency.",
+      "B) Grouping streaming data into small batches and processing them at frequent intervals.",
+      "C) Using very small servers for processing.",
+      "D) Writing data to many small CSV files."
+    ],
+    "answer": "B) Grouping streaming data into small batches and processing them at frequent intervals.",
+    "explanation": "Micro-batching (like Spark Structured Streaming) processes small chunks of data continuously to balance throughput and latency."
+  },
+  {
+    "id": 71,
+    "topic": "General Data Engineering",
+    "question": "Which concept refers to the ability of a system to increase its capacity by adding more nodes/machines to a cluster?",
+    "options": ["A) Vertical Scaling", "B) Horizontal Scaling", "C) Normalization", "D) Encapsulation"],
+    "answer": "B) Horizontal Scaling",
+    "explanation": "Horizontal scaling (scaling out) involves adding more machines to a distributed system to handle increased load."
+  },
+  {
+    "id": 72,
+    "topic": "General Data Engineering",
+    "question": "A 'Junk Dimension' is used to store:",
+    "options": [
+      "A) Deleted records.",
+      "B) Miscellaneous low-cardinality flags and indicators (like Yes/No) that don't fit elsewhere.",
+      "C) Data that is no longer useful.",
+      "D) Error logs from the ETL process."
+    ],
+    "answer": "B) Miscellaneous low-cardinality flags and indicators (like Yes/No) that don't fit elsewhere.",
+    "explanation": "A Junk Dimension groups small, unrelated attributes (like status flags or Booleans) to avoid cluttering the fact table with too many foreign keys."
+  },
+  {
+    "id": 73,
+    "topic": "General Data Engineering",
+    "question": "In Spark, what is an 'Action'?",
+    "options": [
+      "A) A command that defines a transformation but does not execute it.",
+      "B) An operation that triggers the execution of all transformations and returns a result to the driver.",
+      "C) A way to comment the code.",
+      "D) A type of error."
+    ],
+    "answer": "B) An operation that triggers the execution of all transformations and returns a result to the driver.",
+    "explanation": "In Spark's lazy evaluation model, transformations are only executed when an 'Action' (like count, collect, or save) is called."
+  },
+  {
+    "id": 74,
+    "topic": "General Data Engineering",
+    "question": "What is the purpose of 'Partitioning' in a data lake or lakehouse?",
+    "options": [
+      "A) To encrypt individual files.",
+      "B) To physically organize data files into folders based on a column value (like Year or Date) to improve query speed through pruning.",
+      "C) To rename columns automatically.",
+      "D) To limit the number of users who can see the data."
+    ],
+    "answer": "B) To physically organize data files into folders based on a column value (like Year or Date) to improve query speed through pruning.",
+    "explanation": "Partitioning allows the query engine to skip entire folders of data that don't match the query filters, significantly improving performance."
+  },
+  {
+    "id": 75,
+    "topic": "General Data Engineering",
+    "question": "Which of the following describes 'Data Profiling'?",
+    "options": [
+      "A) Creating user accounts.",
+      "B) The process of examining source data to understand its structure, content, and quality.",
+      "C) Designing the UI of a dashboard.",
+      "D) Moving data to a backup server."
+    ],
+    "answer": "B) The process of examining source data to understand its structure, content, and quality.",
+    "explanation": "Data profiling helps engineers understand null counts, data ranges, and patterns before starting the transformation process."
+  },
+  {
+    "id": 76,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Degenerate Dimension'?",
+    "options": [
+      "A) A dimension table with no primary key.",
+      "B) A dimension attribute (like an Order Number) that is stored directly in the fact table without a corresponding dimension table.",
+      "C) A dimension that contains corrupt data.",
+      "D) A dimension that is no longer used."
+    ],
+    "answer": "B) A dimension attribute (like an Order Number) that is stored directly in the fact table without a corresponding dimension table.",
+    "explanation": "Degenerate dimensions are usually unique identifiers (like invoice numbers) that act as keys but have no descriptive attributes to justify a separate table."
+  },
+  {
+    "id": 77,
+    "topic": "General Data Engineering",
+    "question": "Which type of 'Join' in SQL returns all records when there is a match in either the left or the right table?",
+    "options": ["A) INNER JOIN", "B) LEFT JOIN", "C) FULL OUTER JOIN", "D) CROSS JOIN"],
+    "answer": "C) FULL OUTER JOIN",
+    "explanation": "A FULL OUTER JOIN returns all rows from both tables, filling in NULLs where there is no match on either side."
+  },
+  {
+    "id": 78,
+    "topic": "General Data Engineering",
+    "question": "What is 'Lazy Evaluation' in a data processing engine?",
+    "options": [
+      "A) The system waits for the user to click 'Run'.",
+      "B) Operations are not executed immediately but recorded as a lineage of transformations to be optimized later.",
+      "C) The engine runs slowly to save electricity.",
+      "D) The developer takes a break during job execution."
+    ],
+    "answer": "B) Operations are not executed immediately but recorded as a lineage of transformations to be optimized later.",
+    "explanation": "Lazy evaluation allows the engine (like Spark) to optimize the entire execution plan before doing any actual work."
+  },
+  {
+    "id": 79,
+    "topic": "General Data Engineering",
+    "question": "What is 'Change Data Capture' (CDC)?",
+    "options": [
+      "A) Taking a screenshot of the database.",
+      "B) A technique to identify and capture only the data that has changed in a source system to update target systems incrementally.",
+      "C) Deleting all records and reloading them daily.",
+      "D) A method for changing column names."
+    ],
+    "answer": "B) A technique to identify and capture only the data that has changed in a source system to update target systems incrementally.",
+    "explanation": "CDC is essential for efficient, high-frequency synchronization between source databases and a data warehouse/lakehouse."
+  },
+  {
+    "id": 80,
+    "topic": "General Data Engineering",
+    "question": "Which architecture principle suggests that data should be managed by the business domains that own and understand it?",
+    "options": ["A) Data Silo", "B) Data Mesh", "C) Data Monolith", "D) Data Swamp"],
+    "answer": "B) Data Mesh",
+    "explanation": "Data Mesh is a decentralized architectural pattern where data is treated as a product and managed by domain-specific teams."
+  },
+  {
+    "id": 81,
+    "topic": "General Data Engineering",
+    "question": "What is 'Backfilling' in data engineering?",
+    "options": [
+      "A) Deleting old data to make room for new data.",
+      "B) The process of running a pipeline for historical dates to populate data that was missing or incorrect.",
+      "C) Filling empty columns with random values.",
+      "D) Moving data from the cloud to on-premises."
+    ],
+    "answer": "B) The process of running a pipeline for historical dates to populate data that was missing or incorrect.",
+    "explanation": "Backfilling is often required when a new logic is implemented or when a system failure caused data gaps in the past."
+  },
+  {
+    "id": 82,
+    "topic": "General Data Engineering",
+    "question": "In SQL, what is the purpose of the 'GROUP BY' clause?",
+    "options": [
+      "A) To sort the output.",
+      "B) To filter rows based on a condition.",
+      "C) To arrange identical data into groups, often used with aggregate functions like SUM or COUNT.",
+      "D) To join two tables together."
+    ],
+    "answer": "C) To arrange identical data into groups, often used with aggregate functions like SUM or COUNT.",
+    "explanation": "GROUP BY allows you to summarize data by specific categories."
+  },
+  {
+    "id": 83,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Conformed Dimension'?",
+    "options": [
+      "A) A dimension that is only used by one fact table.",
+      "B) A dimension that has the same meaning and structure across multiple fact tables or subject areas.",
+      "C) A dimension that follows a specific naming convention.",
+      "D) A dimension that is stored in a CSV file."
+    ],
+    "answer": "B) A dimension that has the same meaning and structure across multiple fact tables or subject areas.",
+    "explanation": "Conformed dimensions (like 'Date' or 'Customer') allow for consistent reporting across different business processes."
+  },
+  {
+    "id": 84,
+    "topic": "General Data Engineering",
+    "question": "What is the primary role of a 'Data Catalog'?",
+    "options": [
+      "A) To store the actual data files.",
+      "B) To provide a searchable inventory of all data assets, including metadata, descriptions, and ownership.",
+      "C) To run Spark jobs.",
+      "D) To manage firewall rules."
+    ],
+    "answer": "B) To provide a searchable inventory of all data assets, including metadata, descriptions, and ownership.",
+    "explanation": "A data catalog helps users discover and understand the data available in the organization."
+  },
+  {
+    "id": 85,
+    "topic": "General Data Engineering",
+    "question": "Which of the following is an example of an 'Unstructured' data source?",
+    "options": ["A) XML File", "B) PDF Document", "C) Delta Table", "D) PostgreSQL Database"],
+    "answer": "B) PDF Document",
+    "explanation": "Unstructured data like PDFs, images, or audio files do not have a pre-defined data model or schema."
+  },
+  {
+    "id": 86,
+    "topic": "General Data Engineering",
+    "question": "What does 'Data Granularity' refer to?",
+    "options": [
+      "A) The speed of the data pipeline.",
+      "B) The level of detail or depth of the data stored in a table (e.g., daily vs. monthly).",
+      "C) The total size of the database.",
+      "D) The number of users who can access the data."
+    ],
+    "answer": "B) The level of detail or depth of the data stored in a table (e.g., daily vs. monthly).",
+    "explanation": "Higher granularity means more detail (e.g., every individual transaction record)."
+  },
+  {
+    "id": 87,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Window Function' in SQL?",
+    "options": [
+      "A) A function that opens a new browser window.",
+      "B) A function that performs a calculation across a set of table rows that are somehow related to the current row.",
+      "C) A function that only works on Windows OS.",
+      "D) A way to delete rows."
+    ],
+    "answer": "B) A function that performs a calculation across a set of table rows that are somehow related to the current row.",
+    "explanation": "Window functions (like RANK or SUM OVER) allow calculations across partitions of data without collapsing the rows into a single output."
+  },
+  {
+    "id": 88,
+    "topic": "General Data Engineering",
+    "question": "In data engineering, what is 'Orchestration'?",
+    "options": [
+      "A) Playing music in the office.",
+      "B) The automated coordination and management of complex data workflows and task dependencies.",
+      "C) Writing code in Python.",
+      "D) Purchasing cloud licenses."
+    ],
+    "answer": "B) The automated coordination and management of complex data workflows and task dependencies.",
+    "explanation": "Orchestration tools (like Fabric Pipelines or Airflow) manage the timing and order of various data tasks."
+  },
+  {
+    "id": 89,
+    "topic": "General Data Engineering",
+    "question": "What is 'Data Governance'?",
+    "options": [
+      "A) A government agency that manages the internet.",
+      "B) A set of processes, roles, policies, and standards that ensure the effective and efficient use of information.",
+      "C) A tool for backing up data.",
+      "D) The process of hiring data scientists."
+    ],
+    "answer": "B) A set of processes, roles, policies, and standards that ensure the effective and efficient use of information.",
+    "explanation": "Governance covers data quality, security, privacy, and compliance within an organization."
+  },
+  {
+    "id": 90,
+    "topic": "General Data Engineering",
+    "question": "What is the 'Small File Problem' in big data systems?",
+    "options": [
+      "A) The system cannot read files smaller than 1KB.",
+      "B) Having millions of tiny files which causes significant overhead for the file system and query engine metadata management.",
+      "C) Small files are automatically deleted by the cloud provider.",
+      "D) Users cannot see small files in the UI."
+    ],
+    "answer": "B) Having millions of tiny files which causes significant overhead for the file system and query engine metadata management.",
+    "explanation": "Many small files force the engine to spend more time opening/closing files than actually reading data. Compaction (OPTIMIZE) is the solution."
+  },
+  {
+    "id": 91,
+    "topic": "General Data Engineering",
+    "question": "In the context of data quality, what is 'Completeness'?",
+    "options": [
+      "A) Whether the data is formatted correctly.",
+      "B) Whether there are any missing values or NULLs where data should be present.",
+      "C) Whether the data was delivered on time.",
+      "D) Whether the data is encrypted."
+    ],
+    "answer": "B) Whether there are any missing values or NULLs where data should be present.",
+    "explanation": "Completeness measures if the expected data is fully present in the dataset."
+  },
+  {
+    "id": 92,
+    "topic": "General Data Engineering",
+    "question": "What is 'Vertical Scaling' (Scaling Up)?",
+    "options": [
+      "A) Adding more servers to a cluster.",
+      "B) Increasing the CPU or RAM of an existing single server/node.",
+      "C) Moving data to a higher folder in the hierarchy.",
+      "D) Rotating a dashboard to portrait mode."
+    ],
+    "answer": "B) Increasing the CPU or RAM of an existing single server/node.",
+    "explanation": "Scaling up means making a single machine more powerful."
+  },
+  {
+    "id": 93,
+    "topic": "General Data Engineering",
+    "question": "Which SQL statement is used to remove all records from a table without logging individual row deletions?",
+    "options": ["A) DELETE", "B) TRUNCATE", "C) DROP", "D) REMOVE"],
+    "answer": "B) TRUNCATE",
+    "explanation": "TRUNCATE is faster than DELETE as it removes all rows by deallocating the data pages, usually with minimal logging."
+  },
+  {
+    "id": 94,
+    "topic": "General Data Engineering",
+    "question": "What is 'Sovereign Data'?",
+    "options": [
+      "A) Data owned by a king.",
+      "B) Data that is subject to the laws and governance of the country in which it is located.",
+      "C) Data that is encrypted.",
+      "D) Data that is stored in multiple clouds."
+    ],
+    "answer": "B) Data that is subject to the laws and governance of the country in which it is located.",
+    "explanation": "Data sovereignty refers to the legal requirements of where data is stored and processed geographically."
+  },
+  {
+    "id": 95,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Heap Table'?",
+    "options": [
+      "A) A table with a clustered index.",
+      "B) A table without a clustered index, where data is stored in no particular order.",
+      "C) A table stored in memory.",
+      "D) A table used only for temporary data."
+    ],
+    "answer": "B) A table without a clustered index, where data is stored in no particular order.",
+    "explanation": "In a heap, data is simply added to the first available space, making writes fast but range-scans potentially slower."
+  },
+  {
+    "id": 96,
+    "topic": "General Data Engineering",
+    "question": "Which of the following is a primary goal of 'Normalization'?",
+    "options": [
+      "A) To increase data redundancy.",
+      "B) To minimize data redundancy and ensure data dependency makes sense.",
+      "C) To make queries run faster in a BI tool.",
+      "D) To create more Fact tables."
+    ],
+    "answer": "B) To minimize data redundancy and ensure data dependency makes sense.",
+    "explanation": "Normalization organizes database columns and tables to reduce duplication (e.g., 3rd Normal Form)."
+  },
+  {
+    "id": 97,
+    "topic": "General Data Engineering",
+    "question": "What is 'Data Masking'?",
+    "options": [
+      "A) Hiding the database behind a firewall.",
+      "B) Creating a version of the data that is structurally similar but hides sensitive information (e.g., replacing digits with 'X').",
+      "C) Deleting sensitive data.",
+      "D) Converting data to a different language."
+    ],
+    "answer": "B) Creating a version of the data that is structurally similar but hides sensitive information (e.g., replacing digits with 'X').",
+    "explanation": "Data masking allows developers/testers to work with realistic data without seeing actual sensitive PII (Personally Identifiable Information)."
+  },
+  {
+    "id": 98,
+    "topic": "General Data Engineering",
+    "question": "What is a 'Cold Path' in a data architecture?",
+    "options": [
+      "A) The path used for high-frequency, real-time data.",
+      "B) The path used for low-frequency, historical, or batch processing where latency is acceptable.",
+      "C) Data stored in a data center in a cold climate.",
+      "D) A pipeline that has failed."
+    ],
+    "answer": "B) The path used for low-frequency, historical, or batch processing where latency is acceptable.",
+    "explanation": "The 'Cold Path' usually handles large-scale batch processing for deep historical analysis."
+  },
+  {
+    "id": 99,
+    "topic": "General Data Engineering",
+    "question": "What does 'Cardinality' refer to in a database column?",
+    "options": [
+      "A) The data type of the column.",
+      "B) The uniqueness of data values contained in a column (high cardinality = many unique values).",
+      "C) The name of the column.",
+      "D) The physical size of the column."
+    ],
+    "answer": "B) The uniqueness of data values contained in a column (high cardinality = many unique values).",
+    "explanation": "Cardinality is important for performance tuning; for example, high-cardinality columns (like ID) are good for indexing but poor for certain types of compression."
+  },
+  {
+    "id": 100,
+    "topic": "General Data Engineering",
+    "question": "Which of the following describes 'Data Virtualization'?",
+    "options": [
+      "A) Moving all data to a virtual machine.",
+      "B) Providing a single access layer to query data from multiple sources without moving the data physically.",
+      "C) Creating a VR simulation of the data center.",
+      "D) Compressing data into a ZIP file."
+    ],
+    "answer": "B) Providing a single access layer to query data from multiple sources without moving the data physically.",
+    "explanation": "Data virtualization (similar to Fabric Shortcuts) allows users to treat disparate data sources as a single database."
   }
+
 ]
