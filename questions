@@ -1,0 +1,47 @@
+[
+  {
+    "id": 1,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Precisas de armazenar dados semi-estruturados em formato Delta Lake no Fabric para serem alterados via Spark e consultados via T-SQL. Qual item deves criar?",
+    "options": ["A) Data Warehouse", "B) Lakehouse", "C) Eventhouse", "D) Dataflow Gen2"],
+    "answer": "B) Lakehouse",
+    "explanation": "O Lakehouse suporta nativamente escritas via Spark em tabelas Delta e expõe automaticamente um SQL Analytics Endpoint."
+  },
+  {
+    "id": 2,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Que funcionalidade exclusiva do Fabric otimiza a compressão e ordenação de ficheiros Parquet para carregamento ultra-rápido no Direct Lake do Power BI?",
+    "options": ["A) SHA-256 Hashing", "B) V-Order", "C) Z-Ordering clássico", "D) CSV Conversion"],
+    "answer": "B) V-Order",
+    "explanation": "O V-Order é uma otimização de escrita do Fabric que prepara os dados para o motor VertiPaq do Direct Lake."
+  },
+  {
+    "id": 3,
+    "topic": "Data Engineering / General",
+    "question": "Num cluster Apache Spark, qual é o componente responsável por coordenar a execução do código e distribuir as tarefas pelos worker nodes?",
+    "options": ["A) Executor Node", "B) Driver Node", "C) Cluster Manager", "D) Worker Node"],
+    "answer": "B) Driver Node",
+    "explanation": "O Driver Node mantém as informações sobre a aplicação Spark e distribui as tarefas (tasks) pelos executores."
+  },
+  {
+    "id": 4,
+    "topic": "Data Engineering / General",
+    "question": "O que caracteriza uma arquitetura de dados em estrela (Star Schema) numa base de dados analítica?",
+    "options": [
+      "A) Tabelas de dimensão totalmente normalizadas até à 3ª Forma Normal",
+      "B) Uma tabela de factos central conectada a tabelas de dimensão desnormalizadas",
+      "C) Tabelas sem chaves primárias nem relacionamentos",
+      "D) Armazenamento exclusivo em ficheiros sem suporte a SQL"
+    ],
+    "answer": "B) Uma tabela de factos central conectada a tabelas de dimensão desnormalizadas",
+    "explanation": "O Star Schema centra-se numa tabela de factos rodeada por dimensões diretamente conectadas, simplificando consultas analíticas."
+  },
+  {
+    "id": 5,
+    "topic": "Microsoft Fabric / DP-700",
+    "question": "Como podes reutilizar dados no Azure Data Lake Storage Gen2 (ADLS Gen2) dentro do OneLake do Fabric sem copiar os dados fisicamente?",
+    "options": ["A) Criar um Shortcut (Atalho)", "B) Usar Dataflow Gen2", "C) Ferramenta AzCopy", "D) Mirroring"],
+    "answer": "A) Criar um Shortcut (Atalho)",
+    "explanation": "Os Shortcuts mapeiam caminhos de armazenamento externo diretamente no OneLake sem duplicação de dados."
+  }
+]
