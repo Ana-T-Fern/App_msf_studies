@@ -1,7 +1,10 @@
 import datetime
+import json
+import random
 import requests
 import streamlit as st
 
+# Mobile layout configuration
 st.set_page_config(
     page_title="MS Fabric Micro-Learning", page_icon="⚡", layout="centered"
 )
@@ -17,7 +20,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- PERSIST PROGRESS & GAMIFICATION DATA ---
+
+# --- LOAD QUESTIONS FROM JSON ---
+@st.cache_data
+def load_questions():
+    try:
+        with open("questions.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        return []
+
+
+QUESTIONS_BANK = load_questions()
+
+# --- PERSIST PROGRESS & GAMIFICATION DATA IN BROWSER URL ---
 params = st.query_params
 
 if "xp" not in st.session_state:
@@ -131,6 +147,82 @@ def fetch_strict_course_units(course_uid, course_type):
     return units_list
 
 
+# --- POP-UP QUIZ MODAL ---
+@st.dialog("🧠 TEST YOUR KNOWLEDGE!")
+def open_quiz_dialog(reward_xp, current_idx, is_boss):
+    st.write("Answer **3 questions** correctly to claim your XP!")
+
+    # Randomly pick 3 questions for this quiz attempt
+    if (
+        "quiz_sample" not in st.session_state
+        or st.session_state.get("quiz_idx") != current_idx
+    ):
+        st.session_state.quiz_sample = (
+            random.sample(QUESTIONS_BANK, min(3, len(QUESTIONS_BANK)))
+            if QUESTIONS_BANK
+            else []
+        )
+        st.session_state.quiz_idx = current_idx
+
+    if not st.session_state.quiz_sample:
+        st.warning("No questions found in `questions.json`.")
+        if st.button("Claim XP Anyway"):
+            st.session_state.xp += reward_xp
+            st.session_state.completed_units.add(str(current_idx))
+            update_streak()
+            save_progress()
+            st.rerun()
+        return
+
+    user_answers = {}
+
+    # Render questions from JSON
+    for idx, q in enumerate(st.session_state.quiz_sample):
+        st.caption(f"🏷️ **Topic:** {q.get('topic', 'MS Fabric')}")
+        st.markdown(f"**Q{idx + 1}: {q['question']}**")
+
+        user_answers[idx] = st.radio(
+            f"Select answer for Q{idx+1}:",
+            q["options"],
+            key=f"q_{current_idx}_{idx}",
+            index=None,
+            label_visibility="collapsed",
+        )
+        st.write("---")
+
+    if st.button("Submit Answers 🚀"):
+        if None in user_answers.values():
+            st.error("Please answer all 3 questions before submitting!")
+            return
+
+        score = 0
+        wrong_explanations = []
+
+        for idx, q in enumerate(st.session_state.quiz_sample):
+            if user_answers[idx] == q["answer"]:
+                score += 1
+            else:
+                wrong_explanations.append(
+                    f"**Q{idx+1} Incorrect:** {q['explanation']}"
+                )
+
+        if score == len(st.session_state.quiz_sample):
+            st.success(f"🎉 Perfect Score! +{reward_xp} XP Earned!")
+            st.session_state.xp += reward_xp
+            st.session_state.completed_units.add(str(current_idx))
+            update_streak()
+            save_progress()
+            if is_boss:
+                st.balloons()
+            st.rerun()
+        else:
+            st.error(
+                f"You scored {score}/{len(st.session_state.quiz_sample)}. Review the explanations below and try again!"
+            )
+            for exp in wrong_explanations:
+                st.info(exp)
+
+
 # --- HEADER & GAMIFICATION STATS ---
 st.title("⚡ MS Fabric Quest")
 
@@ -141,9 +233,7 @@ with col_s1:
 with col_s2:
     st.subheader(f"{get_rank(st.session_state.xp)}")
 
-selected_course_name = st.selectbox(
-    "Select Quest Path:", list(COURSES.keys())
-)
+selected_course_name = st.selectbox("Select Quest Path:", list(COURSES.keys()))
 selected_course = COURSES[selected_course_name]
 units_bank = fetch_strict_course_units(
     selected_course["uid"], selected_course["type"]
@@ -181,7 +271,7 @@ if units_bank:
             """
             <div class="boss-card">
                 🚨 <b>BOSS BATTLE LESSON!</b><br>
-                Complete the final lesson of this module to earn a <b>+100 XP Boss Bonus</b>!
+                Complete the pop-up test for a <b>+100 XP Boss Bonus</b>!
             </div>
         """,
             unsafe_allow_html=True,
@@ -192,19 +282,14 @@ if units_bank:
     st.info(f"💡 **Quest Briefing:**\n\n{item['module_summary']}")
 
     col_conclude, col_link = st.columns(2)
+    reward_xp = 100 if item["is_boss"] else 25
 
     with col_conclude:
         if is_completed:
             st.success("✅ Quest Cleared")
         else:
-            reward_xp = 100 if item["is_boss"] else 25
-            if st.button(f"⚔️ Complete Quest (+{reward_xp} XP)"):
-                st.session_state.xp += reward_xp
-                st.session_state.completed_units.add(str(current_idx))
-                update_streak()
-                save_progress()
-                st.balloons() if item["is_boss"] else None
-                st.rerun()
+            if st.button("🧪 Test Knowledge"):
+                open_quiz_dialog(reward_xp, current_idx, item["is_boss"])
 
     with col_link:
         st.link_button("📖 Read Briefing", item["url"])
