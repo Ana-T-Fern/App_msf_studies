@@ -2,7 +2,7 @@ import random
 import requests
 import streamlit as st
 
-# Configuração para ecrã de telemóvel
+# Configuração para telemóvel
 st.set_page_config(
     page_title="MS Fabric Micro-Learning", page_icon="⚡", layout="centered"
 )
@@ -12,13 +12,12 @@ st.markdown(
     <style>
     .stApp { max-width: 480px; margin: 0 auto; }
     div.stButton > button { width: 100%; border-radius: 12px; height: 3.2em; background-color: #0078D4; color: white; font-weight: bold; }
-    .mod-badge { background-color: #e1dfdd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- PERSISTÊNCIA DE PROGRESSO (GUARDA NO NAVEGADOR) ---
+# --- PERSISTÊNCIA DO PROGRESSO ---
 params = st.query_params
 
 if "xp" not in st.session_state:
@@ -34,58 +33,79 @@ def save_progress():
     st.query_params["read"] = str(st.session_state.units_read)
 
 
-# --- DICIONÁRIO DOS DOIS CURSOS ESPECÍFICOS DA MICROSOFT ---
+# --- CURSOS ESPECÍFICOS E SEUS UIDS OFICIAIS ---
 COURSES = {
     "🌱 Get started with Microsoft Fabric (Learning Path)": {
         "uid": "learn.wwl.get-started-fabric",
-        "search": "get-started-fabric",
+        "type": "learningPaths",
     },
-    "🔥 Implement data engineering solutions using MS Fabric (Course DP-700)": {
+    "🔥 Implement data engineering solutions using MS Fabric (DP-700)": {
         "uid": "learn.wwl.implement-data-engineering-solutions-using-microsoft-fabric",
-        "search": "implement-data-engineering-solutions-using-microsoft-fabric",
+        "type": "courses",
     },
 }
 
 
-# --- CARREGAR UNIDADES E MÓDULOS DOS CURSOS ESPECÍFICOS ---
+# --- CARREGAR APENAS OS MÓDULOS PERTENCENTES AO PATH/CURSO ---
 @st.cache_data(ttl=86400)
-def fetch_exact_course_units(course_search):
-    """Busca o catálogo da MS filtrado exclusivamente pelo curso selecionado."""
-    url = f"https://learn.microsoft.com/api/catalog/?search={course_search}&locale=en-us"
+def fetch_strict_course_units(course_uid, course_type):
+    """Passo 1: Obtém a lista estrita de módulos do curso. Passo 2: Extrai as Unidades/Lições."""
     units_list = []
 
+    # 1. Consultar a API pelo UID do Path/Curso
+    url = f"https://learn.microsoft.com/api/catalog/?uid={course_uid}&locale=pt-pt"
     try:
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
             data = res.json()
-            modules = data.get("modules", [])
 
-            for mod in modules:
-                mod_title = mod.get("title", "Módulo sem título")
-                mod_url = mod.get("url", "")
-                mod_summary = mod.get(
-                    "summary", "Sem resumo disponível."
+            # Extrair os UIDs dos módulos associados a este curso/path
+            container = data.get(course_type, [])
+            if not container:
+                # Tentar fallback caso o objeto venha como learningPaths ou courses
+                container = data.get("learningPaths", []) or data.get(
+                    "courses", []
                 )
-                units_uids = mod.get("units", [])
 
-                if units_uids:
-                    for idx, unit_uid in enumerate(units_uids):
-                        # Limpa o identificador para criar um nome amigável para a lição
-                        raw_name = unit_uid.split(".")[-1].replace("-", " ")
-                        unit_name = raw_name.capitalize()
+            if container:
+                module_uids = container[0].get("modules", [])
 
-                        units_list.append(
-                            {
-                                "unit_title": f"Lição {idx + 1}: {unit_name}",
-                                "module_title": mod_title,
-                                "module_summary": mod_summary,
-                                "unit_index": idx + 1,
-                                "total_units": len(units_uids),
-                                "url": mod_url,
-                            }
-                        )
+                if module_uids:
+                    # 2. Consultar os detalhes dos módulos específicos deste curso
+                    mod_uids_str = ",".join(module_uids)
+                    mod_url = f"https://learn.microsoft.com/api/catalog/?uid={mod_uids_str}&locale=pt-pt"
+                    mod_res = requests.get(mod_url, timeout=10)
+
+                    if mod_res.status_code == 200:
+                        modules_data = mod_res.json().get("modules", [])
+
+                        for mod in modules_data:
+                            mod_title = mod.get("title", "Módulo")
+                            mod_summary = mod.get(
+                                "summary", "Sem resumo disponível."
+                            )
+                            mod_url_link = mod.get("url", "")
+                            units_uids = mod.get("units", [])
+
+                            # Extrair as lições/unidades do módulo
+                            for idx, unit_uid in enumerate(units_uids):
+                                raw_name = unit_uid.split(".")[-1].replace(
+                                    "-", " "
+                                )
+                                unit_name = raw_name.capitalize()
+
+                                units_list.append(
+                                    {
+                                        "unit_title": f"Lição {idx + 1}: {unit_name}",
+                                        "module_title": mod_title,
+                                        "module_summary": mod_summary,
+                                        "unit_index": idx + 1,
+                                        "total_units": len(units_uids),
+                                        "url": mod_url_link,
+                                    }
+                                )
     except Exception as e:
-        st.error(f"Erro ao ligar à API do MS Learn: {e}")
+        st.error(f"Erro ao carregar os dados do MS Learn: {e}")
 
     return units_list
 
@@ -98,13 +118,15 @@ selected_course_name = st.selectbox(
 )
 
 selected_course = COURSES[selected_course_name]
-units_bank = fetch_exact_course_units(selected_course["search"])
+units_bank = fetch_strict_course_units(
+    selected_course["uid"], selected_course["type"]
+)
 
-# --- SIDEBAR (PROGRESSO) ---
+# --- SIDEBAR ---
 st.sidebar.title("🏆 Teu Progresso")
 st.sidebar.metric("XP Total 🌟", st.session_state.xp)
 st.sidebar.metric("Lições Lidas ⚡", st.session_state.units_read)
-st.sidebar.metric("Total de Lições no Curso", len(units_bank))
+st.sidebar.metric("Lições do Curso", len(units_bank))
 
 if st.sidebar.button("🗑️ Reset de Progresso"):
     st.session_state.xp = 0
@@ -114,13 +136,10 @@ if st.sidebar.button("🗑️ Reset de Progresso"):
 
 st.divider()
 
-# --- EXIBIÇÃO DO CONTEÚDO ---
+# --- CONTEÚDO ---
 if not units_bank:
-    st.warning(
-        "Não foi possível carregar as lições deste curso no momento. Tenta recarregar."
-    )
+    st.warning("A carregar as lições oficiais do curso selecionado...")
 else:
-    # Botão para sortear ou passar à próxima lição do curso selecionado
     if st.session_state.current_unit is None or st.button(
         "🔄 Próxima Lição do Curso"
     ):
@@ -129,8 +148,7 @@ else:
 
     item = st.session_state.current_unit
     if item:
-        # Exibe o Módulo Pai
-        st.caption("📦 MÓDULO OFICIAL")
+        st.caption("📦 MÓDULO PERTENCENTE AO CURSO")
         st.markdown(f"**{item['module_title']}**")
 
         st.caption(
@@ -138,8 +156,7 @@ else:
         )
         st.subheader(item["unit_title"])
 
-        # Breve contexto/resumo do módulo
-        st.info(f"💡 **Sobre este Módulo:**\n\n{item['module_summary']}")
+        st.info(f"💡 **Resumo do Módulo:**\n\n{item['module_summary']}")
 
         col1, col2 = st.columns(2)
 
