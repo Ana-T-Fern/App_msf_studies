@@ -1,12 +1,12 @@
+import json
 import random
-import re
 import requests
 import streamlit as st
 
-# Configuração da página para telemóvel
-st.set_page_config(page_title="DP-700 Quest", page_icon="⚡", layout="centered")
+# Configuração da página para estilo Mobile
+st.set_page_config(page_title="DP-700 Hub", page_icon="⚡", layout="centered")
 
-# CSS Estilo App Mobile
+# Estilo CSS para botões e layout de telemóvel
 st.markdown(
     """
     <style>
@@ -17,103 +17,168 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Perguntas de Fallback (Garante que a app NUNCA fica vazia)
-FALLBACK_QUESTIONS = [
-    {
-        "question": "Precisas de armazenar dados em formato Delta Lake no Fabric para serem alterados via Spark e consultados via T-SQL pelo SQL Analytics Endpoint. Qual item deves criar?",
-        "options": ["Data Warehouse", "Lakehouse", "Eventhouse", "Dataflow Gen2"],
-        "answer": "Lakehouse",
-        "explanation": "O Lakehouse suporta escritas em Delta Lake e expõe automaticamente um SQL Analytics Endpoint."
-    },
-    {
-        "question": "Qual funcionalidade do Fabric otimiza a ordenação e compressão de ficheiros Parquet para carregamento ultra-rápido no Direct Lake do Power BI?",
-        "options": ["SHA-256", "V-Order", "Z-Ordering", "CSV Convert"],
-        "answer": "V-Order",
-        "explanation": "O V-Order é uma otimização de escrita exclusiva do Fabric para o motor VertiPaq."
-    },
-    {
-        "question": "Como podes reutilizar dados no Azure Data Lake Storage Gen2 (ADLS Gen2) dentro do OneLake sem copiar os dados fisicamente?",
-        "options": ["Criar um Shortcut (Atalho)", "Usar Dataflow Gen2", "AzCopy", "Mirroring"],
-        "answer": "Criar um Shortcut (Atalho)",
-        "explanation": "Os Shortcuts permitem mapear armazenamento externo no OneLake sem mover dados."
-    }
-]
 
-@st.cache_data(ttl=1800)
-def load_questions_from_github():
-    questions = []
-    
-    # URLs diretas dos ficheiros de estudo do repositório redonelach1
-    urls = [
-        "https://raw.githubusercontent.com/redonelach1/DP-700-Exam-Preparation-Content/main/README.md",
-        "https://raw.githubusercontent.com/redonelach1/DP-700-Exam-Preparation-Content/main/DP-700-Study-Guide.md"
-    ]
-    
-    for url in urls:
-        try:
-            res = requests.get(url, timeout=5)
-            if res.status_code == 200:
-                text = res.text
-                
-                # Procura blocos que contenham perguntas no Markdown
-                blocks = re.split(r'\n(?=Question|#|###|\*\*Question)', text)
-                for block in blocks:
-                    lines = [l.strip() for l in block.split('\n') if l.strip()]
-                    if len(lines) >= 3:
-                        opts = [l for l in lines if re.match(r'^[-*A-D][\.\)]\s', l)]
-                        if len(opts) >= 2:
-                            questions.append({
-                                "question": lines[0].replace("#", "").strip(),
-                                "options": opts,
-                                "answer": "Consulta a resposta oficial no repositório GitHub.",
-                                "explanation": "Extraído diretamente do repositório DP-700 Exam Preparation."
-                            })
-        except Exception:
-            continue
-            
-    # Se não conseguir extrair do GitHub, devolve as perguntas de reserva
-    return questions if len(questions) > 0 else FALLBACK_QUESTIONS
+# --- FUNÇÕES DE CARREGAMENTO DE DADOS ---
 
-# Inicializar Estado da Sessão
+
+# 1. Carregar Conteúdos do MS Learn via API Oficial
+@st.cache_data(ttl=86400)
+def fetch_ms_learn_modules(query="fabric dp-700"):
+    url = f"https://learn.microsoft.com/api/catalog/?search={query}&locale=pt-pt"
+    try:
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            modules = []
+            for item in data.get("modules", []):
+                modules.append(
+                    {
+                        "title": item.get("title"),
+                        "summary": item.get("summary"),
+                        "duration": item.get("duration_in_minutes", "5"),
+                        "url": item.get("url"),
+                        "levels": ", ".join(item.get("levels", ["Geral"])),
+                    }
+                )
+            return modules
+    except Exception:
+        pass
+    return []
+
+
+# 2. Carregar Perguntas do Ficheiro JSON Local
+@st.cache_data(ttl=60)
+def load_quiz_questions():
+    try:
+        with open("questions.json", "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+
+# --- INICIALIZAÇÃO DO ESTADO DA SESSÃO ---
+
 if "xp" not in st.session_state:
     st.session_state.xp = 0
-if "answered_count" not in st.session_state:
-    st.session_state.answered_count = 0
-if "current_q" not in st.session_state:
-    st.session_state.current_q = None
-if "answered" not in st.session_state:
-    st.session_state.answered = False
+if "cards_read" not in st.session_state:
+    st.session_state.cards_read = 0
+if "quiz_answered" not in st.session_state:
+    st.session_state.quiz_answered = 0
+if "current_flashcard" not in st.session_state:
+    st.session_state.current_flashcard = None
+if "current_question" not in st.session_state:
+    st.session_state.current_question = None
+if "answered_status" not in st.session_state:
+    st.session_state.answered_status = False
 
-# Carregar perguntas
-questions_bank = load_questions_from_github()
+# Carregar dados
+flashcards_bank = fetch_ms_learn_modules()
+quiz_bank = load_quiz_questions()
 
-# Sidebar
+# --- SIDEBAR / PAINEL DE PROGRESSO ---
+
 st.sidebar.title("🏆 Teu Progresso")
 st.sidebar.metric("XP Total", st.session_state.xp)
-st.sidebar.metric("Respondidas", st.session_state.answered_count)
-st.sidebar.metric("Perguntas na Base", len(questions_bank))
+st.sidebar.metric("Tópicos Lidos 📚", st.session_state.cards_read)
+st.sidebar.metric("Questões Respondidas 📝", st.session_state.quiz_answered)
 
-st.title("⚡ DP-700 Auto Quest")
+total_items = len(flashcards_bank) + len(quiz_bank)
+progress_val = min(
+    1.0,
+    (st.session_state.cards_read + st.session_state.quiz_answered)
+    / max(1, total_items),
+)
+st.sidebar.progress(progress_val)
 
-# Sortear pergunta
-if st.session_state.current_q is None or st.button("🔄 Próxima Pergunta"):
-    st.session_state.current_q = random.choice(questions_bank)
-    st.session_state.answered = False
-    st.rerun()
+# --- NAVEGAÇÃO ENTRE MODOS ---
 
-q = st.session_state.current_q
-if q:
-    st.subheader("Pergunta:")
-    st.markdown(q["question"])
+st.title("⚡ DP-700 Master Hub")
+mode = st.radio(
+    "Escolhe o teu modo de estudo:",
+    ["📚 Teoria (MS Learn Flashcards)", "📝 Prática (Quiz de Perguntas)"],
+    horizontal=True,
+)
 
-    selected_option = st.radio("Escolhe a tua resposta:", q["options"], key="q_radio")
+st.divider()
 
-    if st.button("Confirmar Resposta"):
-        if not st.session_state.answered:
-            st.session_state.answered = True
-            st.session_state.answered_count += 1
-            st.success("🎉 +100 XP registados!")
-            st.session_state.xp += 100
-            st.info(f"💡 **Informação:** {q['explanation']}")
-        else:
-            st.warning("Clica em '🔄 Próxima Pergunta' para continuar!")
+# --- MODO 1: FLASHCARDS MS LEARN ---
+
+if mode == "📚 Teoria (MS Learn Flashcards)":
+    st.caption("Conceitos Oficiais da Documentação Microsoft Learn")
+
+    if not flashcards_bank:
+        st.warning(
+            "Não foi possível carregar os módulos da Microsoft neste momento."
+        )
+    else:
+        if st.session_state.current_flashcard is None or st.button(
+            "🔄 Sortear Novo Flashcard"
+        ):
+            st.session_state.current_flashcard = random.choice(flashcards_bank)
+            st.rerun()
+
+        card = st.session_state.current_flashcard
+        if card:
+            st.caption(
+                f"⏱️ Duração: ~{card['duration']} min | Nível: {card['levels']}"
+            )
+            st.subheader(card["title"])
+            st.info(f"💡 **Resumo do Conceito:**\n\n{card['summary']}")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Marcar como Lido (+50 XP)"):
+                    st.session_state.xp += 50
+                    st.session_state.cards_read += 1
+                    st.success("+50 XP!")
+            with col2:
+                st.link_button("📖 Ler Artigo Completo", card["url"])
+
+# --- MODO 2: QUIZ DE PERGUNTAS ---
+
+elif mode == "📝 Prática (Quiz de Perguntas)":
+    st.caption("Testa os teus conhecimentos para o Exame DP-700")
+
+    if not quiz_bank:
+        st.warning(
+            "O ficheiro questions.json não foi encontrado ou está vazio."
+        )
+    else:
+        if st.session_state.current_question is None or st.button(
+            "🔄 Próxima Pergunta"
+        ):
+            st.session_state.current_question = random.choice(quiz_bank)
+            st.session_state.answered_status = False
+            st.rerun()
+
+        q = st.session_state.current_question
+        if q:
+            st.caption(f"Tópico: {q.get('topic', 'DP-700 / Fabric')}")
+            st.subheader("Pergunta:")
+            st.write(q["question"])
+
+            selected = st.radio(
+                "Escolhe a opção correta:",
+                q["options"],
+                key=f"quiz_opt_{q.get('id', random.randint(1, 1000))}",
+            )
+
+            if st.button("Confirmar Resposta"):
+                if not st.session_state.answered_status:
+                    st.session_state.answered_status = True
+                    st.session_state.quiz_answered += 1
+
+                    if selected == q["answer"]:
+                        st.balloons()
+                        st.success("🎉 Correto! +100 XP")
+                        st.session_state.xp += 100
+                    else:
+                        st.error(
+                            f"❌ Errado. A resposta correta era: **{q['answer']}**"
+                        )
+
+                    st.info(f"💡 **Explicação:** {q['explanation']}")
+                else:
+                    st.warning(
+                        "Clica em '🔄 Próxima Pergunta' para continuar!"
+                    )
