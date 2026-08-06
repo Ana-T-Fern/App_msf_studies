@@ -1,8 +1,7 @@
-import random
 import requests
 import streamlit as st
 
-# Configuração para telemóvel
+# Configuração para ecrã de telemóvel
 st.set_page_config(
     page_title="MS Fabric Micro-Learning", page_icon="⚡", layout="centered"
 )
@@ -17,15 +16,17 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# --- PERSISTÊNCIA DO PROGRESSO ---
+# --- PERSISTÊNCIA DE PROGRESSO ---
 params = st.query_params
 
 if "xp" not in st.session_state:
     st.session_state.xp = int(params.get("xp", 0))
 if "units_read" not in st.session_state:
     st.session_state.units_read = int(params.get("read", 0))
-if "current_unit" not in st.session_state:
-    st.session_state.current_unit = None
+
+# Índice da lição atual (começa na 0 = primeira lição)
+if "lesson_index" not in st.session_state:
+    st.session_state.lesson_index = 0
 
 
 def save_progress():
@@ -46,32 +47,25 @@ COURSES = {
 }
 
 
-# --- CARREGAR APENAS OS MÓDULOS PERTENCENTES AO PATH/CURSO ---
+# --- CARREGAR UNIDADES E MÓDULOS DE FORMA SEQUENCIAL ---
 @st.cache_data(ttl=86400)
 def fetch_strict_course_units(course_uid, course_type):
-    """Passo 1: Obtém a lista estrita de módulos do curso. Passo 2: Extrai as Unidades/Lições."""
+    """Busca a lista de módulos do curso e extrai as lições mantendo a ordem exata."""
     units_list = []
 
-    # 1. Consultar a API pelo UID do Path/Curso
     url = f"https://learn.microsoft.com/api/catalog/?uid={course_uid}&locale=pt-pt"
     try:
         res = requests.get(url, timeout=10)
         if res.status_code == 200:
             data = res.json()
-
-            # Extrair os UIDs dos módulos associados a este curso/path
-            container = data.get(course_type, [])
-            if not container:
-                # Tentar fallback caso o objeto venha como learningPaths ou courses
-                container = data.get("learningPaths", []) or data.get(
-                    "courses", []
-                )
+            container = data.get(course_type, []) or data.get(
+                "learningPaths", []
+            ) or data.get("courses", [])
 
             if container:
                 module_uids = container[0].get("modules", [])
 
                 if module_uids:
-                    # 2. Consultar os detalhes dos módulos específicos deste curso
                     mod_uids_str = ",".join(module_uids)
                     mod_url = f"https://learn.microsoft.com/api/catalog/?uid={mod_uids_str}&locale=pt-pt"
                     mod_res = requests.get(mod_url, timeout=10)
@@ -79,7 +73,13 @@ def fetch_strict_course_units(course_uid, course_type):
                     if mod_res.status_code == 200:
                         modules_data = mod_res.json().get("modules", [])
 
-                        for mod in modules_data:
+                        # Manter a ordem original dos módulos definida no curso
+                        mod_map = {m.get("uid"): m for m in modules_data}
+                        ordered_modules = [
+                            mod_map[uid] for uid in module_uids if uid in mod_map
+                        ]
+
+                        for mod_idx, mod in enumerate(ordered_modules):
                             mod_title = mod.get("title", "Módulo")
                             mod_summary = mod.get(
                                 "summary", "Sem resumo disponível."
@@ -87,7 +87,6 @@ def fetch_strict_course_units(course_uid, course_type):
                             mod_url_link = mod.get("url", "")
                             units_uids = mod.get("units", [])
 
-                            # Extrair as lições/unidades do módulo
                             for idx, unit_uid in enumerate(units_uids):
                                 raw_name = unit_uid.split(".")[-1].replace(
                                     "-", " "
@@ -96,11 +95,11 @@ def fetch_strict_course_units(course_uid, course_type):
 
                                 units_list.append(
                                     {
-                                        "unit_title": f"Lição {idx + 1}: {unit_name}",
-                                        "module_title": mod_title,
+                                        "unit_title": f"Lição: {unit_name}",
+                                        "module_title": f"Módulo {mod_idx + 1}: {mod_title}",
                                         "module_summary": mod_summary,
                                         "unit_index": idx + 1,
-                                        "total_units": len(units_uids),
+                                        "total_units_in_mod": len(units_uids),
                                         "url": mod_url_link,
                                     }
                                 )
@@ -117,56 +116,78 @@ selected_course_name = st.selectbox(
     "Escolhe o Caminho Oficial:", list(COURSES.keys())
 )
 
+# Se mudar de curso, volta à primeira lição (índice 0)
+if "last_selected_course" not in st.session_state or st.session_state.last_selected_course != selected_course_name:
+    st.session_state.lesson_index = 0
+    st.session_state.last_selected_course = selected_course_name
+
 selected_course = COURSES[selected_course_name]
 units_bank = fetch_strict_course_units(
     selected_course["uid"], selected_course["type"]
 )
 
-# --- SIDEBAR ---
+# --- SIDEBAR (PROGRESSO) ---
 st.sidebar.title("🏆 Teu Progresso")
 st.sidebar.metric("XP Total 🌟", st.session_state.xp)
-st.sidebar.metric("Lições Lidas ⚡", st.session_state.units_read)
-st.sidebar.metric("Lições do Curso", len(units_bank))
+st.sidebar.metric("Lições Concluídas ⚡", st.session_state.units_read)
+st.sidebar.metric("Total de Lições no Curso", len(units_bank))
 
 if st.sidebar.button("🗑️ Reset de Progresso"):
     st.session_state.xp = 0
     st.session_state.units_read = 0
+    st.session_state.lesson_index = 0
     save_progress()
     st.rerun()
 
 st.divider()
 
-# --- CONTEÚDO ---
+# --- EXIBIÇÃO DA LIÇÃO ORDENADA ---
 if not units_bank:
     st.warning("A carregar as lições oficiais do curso selecionado...")
 else:
-    if st.session_state.current_unit is None or st.button(
-        "🔄 Próxima Lição do Curso"
-    ):
-        st.session_state.current_unit = random.choice(units_bank)
-        st.rerun()
+    # Garantir que o índice não sai dos limites da lista
+    total_lessons = len(units_bank)
+    current_idx = min(st.session_state.lesson_index, total_lessons - 1)
+    item = units_bank[current_idx]
 
-    item = st.session_state.current_unit
-    if item:
-        st.caption("📦 MÓDULO PERTENCENTE AO CURSO")
-        st.markdown(f"**{item['module_title']}**")
+    # Indicador visual de progresso na sequência (Ex: Lição 3 de 24)
+    st.progress((current_idx + 1) / total_lessons)
+    st.caption(f"📍 **Progresso no Curso:** Lição {current_idx + 1} de {total_lessons}")
 
-        st.caption(
-            f"Parte {item['unit_index']} de {item['total_units']} deste módulo"
-        )
-        st.subheader(item["unit_title"])
+    # Cabeçalho do Módulo e da Lição
+    st.caption("📦 MÓDULO OFICIAL")
+    st.markdown(f"**{item['module_title']}**")
+    st.caption(f"Parte {item['unit_index']} de {item['total_units_in_mod']} do módulo")
 
-        st.info(f"💡 **Resumo do Módulo:**\n\n{item['module_summary']}")
+    st.subheader(item["unit_title"])
+    st.info(f"💡 **Resumo do Módulo:**\n\n{item['module_summary']}")
 
-        col1, col2 = st.columns(2)
+    # Botões de Ação
+    col_conclude, col_link = st.columns(2)
+    with col_conclude:
+        if st.button("✅ Concluir (+25 XP)"):
+            st.session_state.xp += 25
+            st.session_state.units_read += 1
+            save_progress()
+            st.success("+25 XP!")
+            st.rerun()
 
-        with col1:
-            if st.button("✅ Concluir (+25 XP)"):
-                st.session_state.xp += 25
-                st.session_state.units_read += 1
-                save_progress()
-                st.success("+25 XP!")
+    with col_link:
+        st.link_button("📖 Estudar no MS Learn", item["url"])
+
+    st.divider()
+
+    # --- CONTROLO DE NAVEGAÇÃO SEQUENCIAL (ANTERIOR / PRÓXIMA) ---
+    nav_col1, nav_col2 = st.columns(2)
+
+    with nav_col1:
+        if current_idx > 0:
+            if st.button("⬅️ Lição Anterior"):
+                st.session_state.lesson_index -= 1
                 st.rerun()
 
-        with col2:
-            st.link_button("📖 Estudar no MS Learn", item["url"])
+    with nav_col2:
+        if current_idx < total_lessons - 1:
+            if st.button("➡️ Próxima Lição"):
+                st.session_state.lesson_index += 1
+                st.rerun()
