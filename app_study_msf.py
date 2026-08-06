@@ -1,7 +1,7 @@
+import datetime
 import requests
 import streamlit as st
 
-# Mobile layout configuration
 st.set_page_config(
     page_title="MS Fabric Micro-Learning", page_icon="⚡", layout="centered"
 )
@@ -11,19 +11,22 @@ st.markdown(
     <style>
     .stApp { max-width: 480px; margin: 0 auto; }
     div.stButton > button { width: 100%; border-radius: 12px; height: 3.2em; background-color: #0078D4; color: white; font-weight: bold; }
-    .badge-completed { background-color: #107C41; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
+    .boss-card { background: linear-gradient(135deg, #ff4b4b, #6b0000); color: white; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- PERSIST PROGRESS IN BROWSER URL ---
+# --- PERSIST PROGRESS & GAMIFICATION DATA ---
 params = st.query_params
 
 if "xp" not in st.session_state:
     st.session_state.xp = int(params.get("xp", 0))
+if "streak" not in st.session_state:
+    st.session_state.streak = int(params.get("streak", 0))
+if "last_date" not in st.session_state:
+    st.session_state.last_date = params.get("last_date", "")
 if "completed_units" not in st.session_state:
-    # Save completed lesson indexes as a set of string integers
     raw_completed = params.get("completed", "")
     st.session_state.completed_units = (
         set(raw_completed.split(",")) if raw_completed else set()
@@ -34,31 +37,52 @@ if "lesson_index" not in st.session_state:
 
 def save_progress():
     st.query_params["xp"] = str(st.session_state.xp)
+    st.query_params["streak"] = str(st.session_state.streak)
+    st.query_params["last_date"] = st.session_state.last_date
     st.query_params["completed"] = ",".join(
         map(str, st.session_state.completed_units)
     )
     st.query_params["idx"] = str(st.session_state.lesson_index)
 
 
-# --- SPECIFIC OFFICIAL COURSES (EN-US) ---
+def get_rank(xp):
+    if xp < 100:
+        return "🐣 Fabric Novice"
+    if xp < 250:
+        return "💾 OneLake Explorer"
+    if xp < 500:
+        return "🧹 Data Wrangler"
+    if xp < 1000:
+        return "🛠️ Pipeline Architect"
+    return "🏆 Fabric Master"
+
+
+def update_streak():
+    today_str = str(datetime.date.today())
+    if st.session_state.last_date != today_str:
+        yesterday_str = str(datetime.date.today() - datetime.timedelta(days=1))
+        if st.session_state.last_date == yesterday_str:
+            st.session_state.streak += 1
+        else:
+            st.session_state.streak = 1
+        st.session_state.last_date = today_str
+
+
 COURSES = {
-    "🌱 Get started with Microsoft Fabric (Learning Path)": {
+    "🌱 Get started with Microsoft Fabric": {
         "uid": "learn.wwl.get-started-fabric",
         "type": "learningPaths",
     },
-    "🔥 Implement data engineering solutions using MS Fabric (DP-700)": {
+    "🔥 Implement Data Engineering (DP-700)": {
         "uid": "learn.wwl.implement-data-engineering-solutions-using-microsoft-fabric",
         "type": "courses",
     },
 }
 
 
-# --- FETCH UNITS & MODULES IN EN-US ---
 @st.cache_data(ttl=86400)
 def fetch_strict_course_units(course_uid, course_type):
-    """Fetch strict modules and lessons in en-us preserving order."""
     units_list = []
-
     url = f"https://learn.microsoft.com/api/catalog/?uid={course_uid}&locale=en-us"
     try:
         res = requests.get(url, timeout=10)
@@ -67,80 +91,74 @@ def fetch_strict_course_units(course_uid, course_type):
             container = data.get(course_type, []) or data.get(
                 "learningPaths", []
             ) or data.get("courses", [])
-
             if container:
                 module_uids = container[0].get("modules", [])
-
                 if module_uids:
                     mod_uids_str = ",".join(module_uids)
-                    mod_url = f"https://learn.microsoft.com/api/catalog/?uid={mod_uids_str}&locale=en-us"
-                    mod_res = requests.get(mod_url, timeout=10)
-
+                    mod_res = requests.get(
+                        f"https://learn.microsoft.com/api/catalog/?uid={mod_uids_str}&locale=en-us",
+                        timeout=10,
+                    )
                     if mod_res.status_code == 200:
                         modules_data = mod_res.json().get("modules", [])
-
                         mod_map = {m.get("uid"): m for m in modules_data}
                         ordered_modules = [
                             mod_map[uid] for uid in module_uids if uid in mod_map
                         ]
 
                         for mod_idx, mod in enumerate(ordered_modules):
-                            mod_title = mod.get("title", "Module")
-                            mod_summary = mod.get(
-                                "summary", "No summary available."
-                            )
-                            mod_url_link = mod.get("url", "")
                             units_uids = mod.get("units", [])
-
                             for idx, unit_uid in enumerate(units_uids):
                                 raw_name = unit_uid.split(".")[-1].replace(
                                     "-", " "
                                 )
-                                unit_name = raw_name.capitalize()
-
+                                is_boss = idx == len(units_uids) - 1
                                 units_list.append(
                                     {
-                                        "unit_title": f"Lesson: {unit_name}",
-                                        "module_title": f"Module {mod_idx + 1}: {mod_title}",
-                                        "module_summary": mod_summary,
+                                        "unit_title": f"Lesson: {raw_name.capitalize()}",
+                                        "module_title": f"Module {mod_idx + 1}: {mod.get('title')}",
+                                        "module_summary": mod.get(
+                                            "summary", ""
+                                        ),
                                         "unit_index": idx + 1,
                                         "total_units_in_mod": len(units_uids),
-                                        "url": mod_url_link,
+                                        "url": mod.get("url", ""),
+                                        "is_boss": is_boss,
                                     }
                                 )
     except Exception as e:
-        st.error(f"Error fetching data from MS Learn API: {e}")
-
+        st.error(f"Error: {e}")
     return units_list
 
 
-# --- UI HEADER ---
-st.title("⚡ MS Fabric Hub")
+# --- HEADER & GAMIFICATION STATS ---
+st.title("⚡ MS Fabric Quest")
+
+# Streak Banner
+col_s1, col_s2 = st.columns(2)
+with col_s1:
+    st.subheader(f"🔥 {st.session_state.streak} Day Streak")
+with col_s2:
+    st.subheader(f"{get_rank(st.session_state.xp)}")
 
 selected_course_name = st.selectbox(
-    "Choose Official Path:", list(COURSES.keys())
+    "Select Quest Path:", list(COURSES.keys())
 )
-
-# Reset or maintain index when switching courses
-if "last_selected_course" not in st.session_state or st.session_state.last_selected_course != selected_course_name:
-    st.session_state.lesson_index = 0
-    st.session_state.last_selected_course = selected_course_name
-
 selected_course = COURSES[selected_course_name]
 units_bank = fetch_strict_course_units(
     selected_course["uid"], selected_course["type"]
 )
 
-# --- SIDEBAR PROGRESS TRACKER ---
-st.sidebar.title("🏆 Your Progress")
+# Sidebar Stats
+st.sidebar.title("🎮 Player Profile")
+st.sidebar.metric("Current Rank", get_rank(st.session_state.xp))
 st.sidebar.metric("Total XP 🌟", st.session_state.xp)
-st.sidebar.metric(
-    "Lessons Completed ⚡", len(st.session_state.completed_units)
-)
-st.sidebar.metric("Total Course Lessons", len(units_bank))
+st.sidebar.metric("Daily Streak 🔥", f"{st.session_state.streak} Days")
+st.sidebar.metric("Quests Cleared ⚡", len(st.session_state.completed_units))
 
-if st.sidebar.button("🗑️ Reset All Progress"):
+if st.sidebar.button("🗑️ Reset Character"):
     st.session_state.xp = 0
+    st.session_state.streak = 0
     st.session_state.completed_units = set()
     st.session_state.lesson_index = 0
     save_progress()
@@ -148,65 +166,61 @@ if st.sidebar.button("🗑️ Reset All Progress"):
 
 st.divider()
 
-# --- CONTENT DISPLAY & TRACKING ---
-if not units_bank:
-    st.warning("Loading official course lessons...")
-else:
+if units_bank:
     total_lessons = len(units_bank)
     current_idx = min(st.session_state.lesson_index, total_lessons - 1)
     item = units_bank[current_idx]
 
-    # Progress Bar & Current Position
     st.progress((current_idx + 1) / total_lessons)
-    
+
     is_completed = str(current_idx) in st.session_state.completed_units
-    
-    status_tag = "✅ COMPLETED" if is_completed else "📖 IN PROGRESS"
-    st.caption(
-        f"📍 **Course Progress:** Lesson {current_idx + 1} of {total_lessons} | **Status:** {status_tag}"
-    )
 
-    # Module & Lesson Hierarchy
-    st.caption("📦 OFFICIAL MODULE")
-    st.markdown(f"**{item['module_title']}**")
-    st.caption(
-        f"Part {item['unit_index']} of {item['total_units_in_mod']} in this module"
-    )
+    # Boss Fight Banner
+    if item["is_boss"]:
+        st.markdown(
+            """
+            <div class="boss-card">
+                🚨 <b>BOSS BATTLE LESSON!</b><br>
+                Complete the final lesson of this module to earn a <b>+100 XP Boss Bonus</b>!
+            </div>
+        """,
+            unsafe_allow_html=True,
+        )
 
+    st.caption(f"📦 {item['module_title']}")
     st.subheader(item["unit_title"])
-    st.info(f"💡 **Module Overview:**\n\n{item['module_summary']}")
+    st.info(f"💡 **Quest Briefing:**\n\n{item['module_summary']}")
 
-    # Actions
     col_conclude, col_link = st.columns(2)
 
     with col_conclude:
         if is_completed:
-            st.success("✅ Already Completed")
+            st.success("✅ Quest Cleared")
         else:
-            if st.button("Mark as Complete (+25 XP)"):
-                st.session_state.xp += 25
+            reward_xp = 100 if item["is_boss"] else 25
+            if st.button(f"⚔️ Complete Quest (+{reward_xp} XP)"):
+                st.session_state.xp += reward_xp
                 st.session_state.completed_units.add(str(current_idx))
+                update_streak()
                 save_progress()
+                st.balloons() if item["is_boss"] else None
                 st.rerun()
 
     with col_link:
-        st.link_button("📖 Study on MS Learn", item["url"])
+        st.link_button("📖 Read Briefing", item["url"])
 
     st.divider()
 
-    # --- SEQUENTIAL NAVIGATION ---
     nav_col1, nav_col2 = st.columns(2)
-
     with nav_col1:
         if current_idx > 0:
-            if st.button("⬅️ Previous Lesson"):
+            if st.button("⬅️ Prev Quest"):
                 st.session_state.lesson_index -= 1
                 save_progress()
                 st.rerun()
-
     with nav_col2:
         if current_idx < total_lessons - 1:
-            if st.button("Next Lesson ➡️"):
+            if st.button("Next Quest ➡️"):
                 st.session_state.lesson_index += 1
                 save_progress()
                 st.rerun()
