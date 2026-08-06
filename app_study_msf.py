@@ -51,7 +51,7 @@ COURSES = {
 @st.cache_data(ttl=86400)
 def fetch_exact_course_units(course_search):
     """Busca o catálogo da MS filtrado exclusivamente pelo curso selecionado."""
-    url = f"https://learn.microsoft.com/api/catalog/?search={course_search}&locale=pt-pt"
+    url = f"https://learn.microsoft.com/api/catalog/?search={course_search}&locale=en-us"
     units_list = []
 
     try:
