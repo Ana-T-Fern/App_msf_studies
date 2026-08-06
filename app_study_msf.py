@@ -4,7 +4,7 @@ import streamlit as st
 
 # Configuração para ecrã de telemóvel
 st.set_page_config(
-    page_title="Fabric Micro-Learning", page_icon="⚡", layout="centered"
+    page_title="MS Fabric Micro-Learning", page_icon="⚡", layout="centered"
 )
 
 st.markdown(
@@ -12,13 +12,13 @@ st.markdown(
     <style>
     .stApp { max-width: 480px; margin: 0 auto; }
     div.stButton > button { width: 100%; border-radius: 12px; height: 3.2em; background-color: #0078D4; color: white; font-weight: bold; }
-    .micro-card { background-color: #f0f4f8; border-left: 4px solid #0078D4; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+    .mod-badge { background-color: #e1dfdd; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.85em; }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
-# --- PERSISTÊNCIA DE PROGRESSO ---
+# --- PERSISTÊNCIA DE PROGRESSO (GUARDA NO NAVEGADOR) ---
 params = st.query_params
 
 if "xp" not in st.session_state:
@@ -34,63 +34,77 @@ def save_progress():
     st.query_params["read"] = str(st.session_state.units_read)
 
 
-# --- BUSCA DE UNIDADES/LIÇÕES INDIVIDUAIS (MICRO-LEARNING) ---
+# --- DICIONÁRIO DOS DOIS CURSOS ESPECÍFICOS DA MICROSOFT ---
+COURSES = {
+    "🌱 Get started with Microsoft Fabric (Learning Path)": {
+        "uid": "learn.wwl.get-started-fabric",
+        "search": "get-started-fabric",
+    },
+    "🔥 Implement data engineering solutions using MS Fabric (Course DP-700)": {
+        "uid": "learn.wwl.implement-data-engineering-solutions-using-microsoft-fabric",
+        "search": "implement-data-engineering-solutions-using-microsoft-fabric",
+    },
+}
+
+
+# --- CARREGAR UNIDADES E MÓDULOS DOS CURSOS ESPECÍFICOS ---
 @st.cache_data(ttl=86400)
-def fetch_micro_lessons(search_query):
-    """Busca módulos e extrai as lições/unidades individuais de 2 minutos."""
-    url = f"https://learn.microsoft.com/api/catalog/?search={search_query}&locale=pt-pt"
-    micro_units = []
+def fetch_exact_course_units(course_search):
+    """Busca o catálogo da MS filtrado exclusivamente pelo curso selecionado."""
+    url = f"https://learn.microsoft.com/api/catalog/?search={course_search}&locale=pt-pt"
+    units_list = []
+
     try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
+        res = requests.get(url, timeout=10)
+        if res.status_code == 200:
+            data = res.json()
             modules = data.get("modules", [])
 
             for mod in modules:
-                mod_title = mod.get("title", "Módulo")
-                icon_url = mod.get("icon_url", "")
-                units = mod.get("units", [])
+                mod_title = mod.get("title", "Módulo sem título")
+                mod_url = mod.get("url", "")
+                mod_summary = mod.get(
+                    "summary", "Sem resumo disponível."
+                )
+                units_uids = mod.get("units", [])
 
-                for idx, unit_uid in enumerate(units):
-                    # Criar um objeto leve para cada lição interna
-                    micro_units.append(
-                        {
-                            "module_title": mod_title,
-                            "unit_number": idx + 1,
-                            "total_units": len(units),
-                            "unit_uid": unit_uid,
-                            "icon": icon_url,
-                            "url": f"https://learn.microsoft.com/pt-pt/training/modules/{mod.get('uid', '')}/{unit_uid}",
-                        }
-                    )
+                if units_uids:
+                    for idx, unit_uid in enumerate(units_uids):
+                        # Limpa o identificador para criar um nome amigável para a lição
+                        raw_name = unit_uid.split(".")[-1].replace("-", " ")
+                        unit_name = raw_name.capitalize()
+
+                        units_list.append(
+                            {
+                                "unit_title": f"Lição {idx + 1}: {unit_name}",
+                                "module_title": mod_title,
+                                "module_summary": mod_summary,
+                                "unit_index": idx + 1,
+                                "total_units": len(units_uids),
+                                "url": mod_url,
+                            }
+                        )
     except Exception as e:
-        st.error(f"Erro ao carregar micro-lições: {e}")
+        st.error(f"Erro ao ligar à API do MS Learn: {e}")
 
-    return micro_units
+    return units_list
 
 
-# --- INTERFACE E SELEÇÃO DE CURSO ---
-st.title("⚡ Fabric Micro-Learning")
-st.caption("Lições Rápidas de 2 Minutos")
+# --- INTERFACE ---
+st.title("⚡ MS Fabric Hub")
 
-course_choice = st.selectbox(
-    "Escolhe o Curso:",
-    [
-        "🟢 Starter: Primeiros passos com Fabric",
-        "🔥 Advanced: DP-700 (Data Engineer)",
-    ],
+selected_course_name = st.selectbox(
+    "Escolhe o Caminho Oficial:", list(COURSES.keys())
 )
 
-search_term = (
-    "get-started-fabric" if "Starter" in course_choice else "dp-700"
-)
-lessons_bank = fetch_micro_lessons(search_term)
+selected_course = COURSES[selected_course_name]
+units_bank = fetch_exact_course_units(selected_course["search"])
 
 # --- SIDEBAR (PROGRESSO) ---
 st.sidebar.title("🏆 Teu Progresso")
 st.sidebar.metric("XP Total 🌟", st.session_state.xp)
-st.sidebar.metric("Micro-Lições Lidas ⚡", st.session_state.units_read)
-st.sidebar.metric("Lições Disponíveis 🧩", len(lessons_bank))
+st.sidebar.metric("Lições Lidas ⚡", st.session_state.units_read)
+st.sidebar.metric("Total de Lições no Curso", len(units_bank))
 
 if st.sidebar.button("🗑️ Reset de Progresso"):
     st.session_state.xp = 0
@@ -100,30 +114,32 @@ if st.sidebar.button("🗑️ Reset de Progresso"):
 
 st.divider()
 
-# --- EXIBIÇÃO DA MICRO-LIÇÃO ---
-if not lessons_bank:
-    st.warning("Não foi possível carregar as lições de micro-learning.")
+# --- EXIBIÇÃO DO CONTEÚDO ---
+if not units_bank:
+    st.warning(
+        "Não foi possível carregar as lições deste curso no momento. Tenta recarregar."
+    )
 else:
+    # Botão para sortear ou passar à próxima lição do curso selecionado
     if st.session_state.current_unit is None or st.button(
-        "⚡ Próxima Lição Rápida"
+        "🔄 Próxima Lição do Curso"
     ):
-        st.session_state.current_unit = random.choice(lessons_bank)
+        st.session_state.current_unit = random.choice(units_bank)
         st.rerun()
 
-    unit = st.session_state.current_unit
-    if unit:
-        # Mostra o ícone da Microsoft se existir
-        if unit["icon"]:
-            st.image(unit["icon"], width=48)
+    item = st.session_state.current_unit
+    if item:
+        # Exibe o Módulo Pai
+        st.caption("📦 MÓDULO OFICIAL")
+        st.markdown(f"**{item['module_title']}**")
 
         st.caption(
-            f"📦 {unit['module_title']} (Parte {unit['unit_number']} de {unit['total_units']})"
+            f"Parte {item['unit_index']} de {item['total_units']} deste módulo"
         )
-        st.subheader(f"Lição #{unit['unit_number']}")
+        st.subheader(item["unit_title"])
 
-        st.info(
-            f"🎯 **Objetivo de Micro-Learning:**\n\nEstuda esta unidade curta para avançares no módulo **{unit['module_title']}**."
-        )
+        # Breve contexto/resumo do módulo
+        st.info(f"💡 **Sobre este Módulo:**\n\n{item['module_summary']}")
 
         col1, col2 = st.columns(2)
 
@@ -136,4 +152,4 @@ else:
                 st.rerun()
 
         with col2:
-            st.link_button("📖 Ler Lição (2 min)", unit["url"])
+            st.link_button("📖 Estudar no MS Learn", item["url"])
